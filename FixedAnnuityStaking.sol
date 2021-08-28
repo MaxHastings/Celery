@@ -98,40 +98,34 @@ contract FixedAnnuityStaking is ERC20 {
       if (status == 1) {
         calcStake();
         _accounts[msg.sender].status = 0;
+        
+        uint256 currStakedNorm = _accounts[msg.sender].stakedAmount;
+        uint256 currStaked = PRBMathUD60x18.fromUint(currStakedNorm);
+          
+        _accounts[msg.sender].status = 0;
+        uint256 withdrawWindowInBlocksNorm = 10000;
+        uint256 withdrawWindowInBlocks = PRBMathUD60x18.fromUint(withdrawWindowInBlocksNorm);
+        // Set Withdraw Amount Per Block
+        uint256 withdrawAmountPerBlock = PRBMathUD60x18.div(currStaked, withdrawWindowInBlocks);
+        uint256 withdrawAmountPerBlockNorm = PRBMathUD60x18.toUint(withdrawAmountPerBlock);
+      
+        _accounts[msg.sender].withdrawAmountPerBlock = withdrawAmountPerBlockNorm;
       }
     }
     
     function CollectPayout() public {
         
-      int status = _accounts[msg.sender].status;
-      
-      if (status == 1) {
-        calcStake();
-      }
-      
-      uint256 currStakedNorm = _accounts[msg.sender].stakedAmount;
-      uint256 currStaked = PRBMathUD60x18.fromUint(currStakedNorm);
-      uint256 withdrawAmountPerBlock;
-      
-      if (status == 1){
-          _accounts[msg.sender].status = 0;
-          uint256 withdrawWindowInBlocksNorm = 10000;
-          uint256 withdrawWindowInBlocks = PRBMathUD60x18.fromUint(withdrawWindowInBlocksNorm);
-          // Set Withdraw Amount Per Block
-          withdrawAmountPerBlock = PRBMathUD60x18.div(currStaked, withdrawWindowInBlocks);
-          uint256 withdrawAmountPerBlockNorm = PRBMathUD60x18.toUint(withdrawAmountPerBlock);
-          
-        _accounts[msg.sender].withdrawAmountPerBlock = withdrawAmountPerBlockNorm;
-      } else {
-        withdrawAmountPerBlock = PRBMathUD60x18.fromUint(_accounts[msg.sender].withdrawAmountPerBlock);
-      }
+      BeginPayout();
         
+      uint256 withdrawAmountPerBlock = PRBMathUD60x18.fromUint(_accounts[msg.sender].withdrawAmountPerBlock);
       uint256 lastBlockHeight = _accounts[msg.sender].blockHeight;
       uint256 blocksStakedNorm = block.number - lastBlockHeight;
       uint256 blocksStaked = PRBMathUD60x18.fromUint(blocksStakedNorm);
       uint256 blockNumber = block.number;
       uint256 maxPayoutAmount = PRBMathUD60x18.mul(withdrawAmountPerBlock, blocksStaked);
       uint256 maxPayoutAmountNorm = PRBMathUD60x18.toUint(maxPayoutAmount);
+      uint256 currStakedNorm = _accounts[msg.sender].stakedAmount;
+      uint256 currStaked = PRBMathUD60x18.fromUint(currStakedNorm);
     
       uint256 payoutAmount;
       if (currStakedNorm < maxPayoutAmountNorm) {
@@ -140,12 +134,12 @@ contract FixedAnnuityStaking is ERC20 {
         payoutAmount = maxPayoutAmountNorm;
       }
       
-      _sendAmount(msg.sender, payoutAmount);
+      _sendAmount(payoutAmount);
       _accounts[msg.sender].blockHeight = block.number;
       _accounts[msg.sender].stakedAmount -= payoutAmount;
     }
     
-    function _sendAmount(address addr, uint256 amount) private {
+    function _sendAmount(uint256 amount) private {
         _mint(msg.sender, amount);
         increaseAllowance(msg.sender, amount);
     }
