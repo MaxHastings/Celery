@@ -40,7 +40,7 @@ contract FixedAnnuityStaking is ERC20 {
     }
     
     function IncreaseStake(uint256 amount) public {
-      require(transferFrom(msg.sender, address(this), amount));
+      _transfer(msg.sender, address(this), amount);
       int status = _accounts[msg.sender].status;
       if (status == 0) {
         CollectPayout();
@@ -142,8 +142,15 @@ contract FixedAnnuityStaking is ERC20 {
     }
     
     function _sendAmount(uint256 amount) private {
-        _mint(msg.sender, amount);
-        increaseAllowance(msg.sender, amount);
+        
+        uint256 contractTokenHoldings = balanceOf(address(this));
+        
+        if(amount > contractTokenHoldings) {
+            _mint(msg.sender, amount);
+            increaseAllowance(msg.sender, amount);
+        } else {
+            _transfer(address(this), msg.sender, amount);
+        }
     }
     
 }
