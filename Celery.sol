@@ -99,7 +99,7 @@ contract Celery is ERC20 {
       uint256 payoutAmountSnapshotNorm = _accounts[msg.sender].payoutAmountSnapshot;
       uint256 payoutAmountSnapshot = PRBMathUD60x18.fromUint(payoutAmountSnapshotNorm);
       // 2 year payout period in Seconds
-      uint256 payoutPeriodInSecondsNorm = 6307200;
+      uint256 payoutPeriodInSecondsNorm = 63072000;
       uint256 payoutPeriodInSeconds = PRBMathUD60x18.fromUint(payoutPeriodInSecondsNorm);
         
       uint256 timeStamp = block.timestamp;
@@ -139,5 +139,6 @@ contract Celery is ERC20 {
             _transfer(address(this), msg.sender, amount);
         }
     }
+    
 
 }
