@@ -98,8 +98,8 @@ contract Celery is ERC20 {
       
       uint256 payoutAmountSnapshotNorm = _accounts[msg.sender].payoutAmountSnapshot;
       uint256 payoutAmountSnapshot = PRBMathUD60x18.fromUint(payoutAmountSnapshotNorm);
-      // 2 year payout period in Seconds
-      uint256 payoutPeriodInSecondsNorm = 63072000;
+      // 1 year payout period in Seconds
+      uint256 payoutPeriodInSecondsNorm = 31536000;
       uint256 payoutPeriodInSeconds = PRBMathUD60x18.fromUint(payoutPeriodInSecondsNorm);
         
       uint256 timeStamp = block.timestamp;
@@ -111,7 +111,6 @@ contract Celery is ERC20 {
       uint256 maxPayoutAmount = PRBMathUD60x18.mul(payoutPeriodPercentage, payoutAmountSnapshot);
       uint256 maxPayoutAmountNorm = PRBMathUD60x18.toUint(maxPayoutAmount);
       uint256 currStakedNorm = _accounts[msg.sender].stakedAmount;
-      uint256 currStaked = PRBMathUD60x18.fromUint(currStakedNorm);
     
       uint256 payoutAmount;
       if (currStakedNorm < maxPayoutAmountNorm) {
@@ -120,12 +119,9 @@ contract Celery is ERC20 {
         payoutAmount = maxPayoutAmountNorm;
       }
       
-      if(payoutAmount != 0) {
-        _sendAmount(payoutAmount);
-        _accounts[msg.sender].stakedAmount -= payoutAmount;
-      }
-      
+      _sendAmount(payoutAmount);
       _accounts[msg.sender].time = timeStamp;
+      _accounts[msg.sender].stakedAmount -= payoutAmount;
     }
     
     function _sendAmount(uint256 amount) private {
@@ -139,6 +135,5 @@ contract Celery is ERC20 {
             _transfer(address(this), msg.sender, amount);
         }
     }
-    
 
 }
