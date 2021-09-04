@@ -8,7 +8,7 @@ struct Account {
     uint256 stakedAmount;
     uint256 lastProcessedTime;
     uint256 payoutAmountSnapshot;
-    int256 status; //0 = Payout, 1 = Staking
+    uint status; //0 = Payout, 1 = Staking
 }
 
 contract Celery is ERC20 {
@@ -43,7 +43,7 @@ contract Celery is ERC20 {
     }
 
     // Returns status of account (payout or stake phase)
-    function getStatus(address addr) public view returns (int256) {
+    function getStatus(address addr) public view returns (uint) {
         return _accounts[addr].status;
     }
 
@@ -63,6 +63,12 @@ contract Celery is ERC20 {
         _processNormalPayoutToAccount();
         _setAccountToStake();
     }
+    
+    // Event that an account increased its staked amount
+    event IncreaseStakeEvent(
+        address _address,
+        uint _amount
+    );
 
     /*
     Public Function
@@ -81,6 +87,9 @@ contract Celery is ERC20 {
 
         // Add additional tokens to staked balance.
         _accounts[msg.sender].stakedAmount += amount;
+        
+        // Notify that account increased its stake
+        emit IncreaseStakeEvent(msg.sender, amount);
     }
 
     /*
@@ -101,6 +110,12 @@ contract Celery is ERC20 {
         uint256 currStakedNorm = _accounts[msg.sender].stakedAmount;
         _accounts[msg.sender].payoutAmountSnapshot = currStakedNorm;
     }
+    
+    // Event that an account collected payout
+    event CollectPayoutEvent(
+        address _address,
+        uint _amount
+    );
 
     /*
     Public function
@@ -110,6 +125,12 @@ contract Celery is ERC20 {
         StartPayout();
         _processNormalPayoutToAccount();
     }
+    
+    // Event that an account collected its entire payout with penalty
+    event CollectAllEvent(
+        address _address,
+        uint _amount
+    );
 
     /*
     Public function
@@ -133,19 +154,29 @@ contract Celery is ERC20 {
         return _getStatus() == 1;
     }
 
-    function _getStatus() private view returns (int256) {
+    function _getStatus() private view returns (uint) {
         return _accounts[msg.sender].status;
     }
 
+    // Event that an account status has been changed.
+    event AccountStatusEvent(
+        address _address,
+        uint _value
+    );
+    
     function _setAccountToPayout() private {
         _setStatus(0);
+        // Notify that account status is now paying out
+        emit AccountStatusEvent(msg.sender, 0);
     }
 
     function _setAccountToStake() private {
         _setStatus(1);
+        // Notify that account status is now staking
+        emit AccountStatusEvent(msg.sender, 1);
     }
 
-    function _setStatus(int256 status) private {
+    function _setStatus(uint status) private {
         _accounts[msg.sender].status = status;
     }
 
@@ -292,6 +323,9 @@ contract Celery is ERC20 {
 
         // Subtract payout amount from staked amount.
         _accounts[msg.sender].stakedAmount -= payoutAmount;
+        
+        // Notify how much an account collected in payment
+        emit CollectPayoutEvent(msg.sender, payoutAmount);
     }
 
     /*
@@ -311,6 +345,9 @@ contract Celery is ERC20 {
 
         // Send tokens to account address.
         _payoutAmountToAccount(payoutAmount);
+        
+        // Notify that an account collected entire payout with penalty
+        emit CollectAllEvent(msg.sender, payoutAmount);
     }
 
     /*
