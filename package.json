@@ -1,0 +1,25 @@
+{
+  "name": "fixedannuitystaking",
+  "version": "1.0.0",
+  "description": "",
+  "main": "",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.1",
+    "prb-math": "^2.2.0",
+    "solc": "^0.8.7-fixed"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaxHastings/FixedAnnuityStaking.git"
+  },
+  "author": "",
+  "license": "Closed Source Private",
+  "bugs": {
+    "url": "https://github.com/MaxHastings/FixedAnnuityStaking/issues"
+  },
+  "homepage": "https://github.com/MaxHastings/FixedAnnuityStaking#readme"
+}
