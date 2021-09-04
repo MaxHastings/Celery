@@ -63,12 +63,6 @@ contract Celery is ERC20 {
         _processNormalPayoutToAccount();
         _setAccountToStake();
     }
-    
-    // Event that an account increased its staked amount
-    event IncreaseStakeEvent(
-        address _address,
-        uint _amount
-    );
 
     /*
     Public Function
@@ -110,12 +104,6 @@ contract Celery is ERC20 {
         uint256 currStakedNorm = _accounts[msg.sender].stakedAmount;
         _accounts[msg.sender].payoutAmountSnapshot = currStakedNorm;
     }
-    
-    // Event that an account collected payout
-    event CollectPayoutEvent(
-        address _address,
-        uint _amount
-    );
 
     /*
     Public function
@@ -125,12 +113,6 @@ contract Celery is ERC20 {
         StartPayout();
         _processNormalPayoutToAccount();
     }
-    
-    // Event that an account collected its entire payout with penalty
-    event CollectAllEvent(
-        address _address,
-        uint _amount
-    );
 
     /*
     Public function
@@ -140,6 +122,32 @@ contract Celery is ERC20 {
         StartPayout();
         _processFullPayoutToAccount();
     }
+    
+    /*** Events ***/
+    
+    // Event that an account collected its entire payout with penalty
+    event CollectAllEvent(
+        address _address,
+        uint _amount
+    );
+        
+    // Event that an account collected payout
+    event CollectPayoutEvent(
+        address _address,
+        uint _amount
+    );
+    
+    // Event that an account increased its staked amount
+    event IncreaseStakeEvent(
+        address _address,
+        uint _amount
+    );
+    
+    // Event that an account status has been changed.
+    event AccountStatusEvent(
+        address _address,
+        uint _value
+    );
 
     /*** Helpers ***/
     function _updateProcessedTime() private {
@@ -157,12 +165,6 @@ contract Celery is ERC20 {
     function _getStatus() private view returns (uint) {
         return _accounts[msg.sender].status;
     }
-
-    // Event that an account status has been changed.
-    event AccountStatusEvent(
-        address _address,
-        uint _value
-    );
     
     function _setAccountToPayout() private {
         _setStatus(0);
