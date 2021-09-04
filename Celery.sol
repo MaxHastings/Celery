@@ -106,6 +106,29 @@ contract Celery is ERC20 {
       }
     }
     
+    // Collect entire staked amount with 50% penalty
+    function CollectAll() public {
+        
+      // Start Payout Phase if account is Staking.
+      StartPayout();
+      
+      // Process Payout.
+      _processPayout();
+      
+      uint256 stakedAmount = _accounts[msg.sender].stakedAmount;
+      
+      // Apply 50% penalty to staked amount
+      uint256 payoutAmount = stakedAmount / 2;
+      
+      // Set staked amount to 0
+      _accounts[msg.sender].stakedAmount = 0;
+      // Update account time.
+      _accounts[msg.sender].time = block.timestamp;
+      
+      // Send tokens to account address.
+      _sendAmount(payoutAmount);
+    }
+    
     function CollectPayout() public {
     
       // Start Payout Phase if account is Staking.
