@@ -170,10 +170,11 @@ contract Celery is ERC20 {
     
     */
     function _calculateStakedAmount() private {
-      _updateProcessedTime();
-
+      // Snapshot seconds staked
       uint256 secondsStakedNorm = block.timestamp - _accounts[msg.sender].lastProcessedTime;
       uint256 currStakedNorm = _accounts[msg.sender].stakedAmount;
+
+      _updateProcessedTime();
 
       // If Time passed is zero or Current Staked Amount is zero, end payout process early.
       if(secondsStakedNorm == 0 || currStakedNorm == 0) {
@@ -216,17 +217,17 @@ contract Celery is ERC20 {
         
     */
     function _processNormalPayoutToAccount() private {
-      _updateProcessedTime();
-
       // Get the latest block timestamp.
       uint256 timeStamp = block.timestamp;
       
-      // Get the last time account payout was processed.
+      // Snapshot the last time account payout was processed.
       uint256 lastTime = _accounts[msg.sender].lastProcessedTime;
       
       // Calculate the length of time that has passed.
       uint256 timePassedInSecondsNorm = timeStamp - lastTime;
       uint256 currStakedNorm = _accounts[msg.sender].stakedAmount;
+
+      _updateProcessedTime();
       
       // If Time passed is zero or Current Staked Amount is zero, end payout process early.
       if (timePassedInSecondsNorm == 0 || currStakedNorm == 0) {
@@ -257,7 +258,7 @@ contract Celery is ERC20 {
       // Convert payout amount back to normal integer.
       uint256 maxPayoutAmountNorm = PRBMathUD60x18.toUint(maxPayoutAmount);
     
-      uint256 payoutAmount = 0;
+      uint256 payoutAmount;
       
       // Check if Current Staked Amount is smaller than Max Payout
       if (currStakedNorm < maxPayoutAmountNorm) {
