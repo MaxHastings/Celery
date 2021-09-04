@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.2;
+pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "prb-math/contracts/PRBMathUD60x18.sol";
@@ -57,7 +57,7 @@ contract Celery is ERC20 {
       }
 
       // If in payout phase, send to account what has been collected over the payout period
-      _processPayoutToAccount();
+      _processNormalPayoutToAccount();
       _setAccountToStake();
     }
     
@@ -105,8 +105,18 @@ contract Celery is ERC20 {
     */
     function CollectPayout() public {
       StartPayout();
-      _processPayoutToAccount();
+      _processNormalPayoutToAccount();
     }
+
+    /*
+    Public function
+    // Collect entire staked amount with 50% penalty
+    */
+    function CollectAll() public {
+      StartPayout();
+      _processFullPayoutToAccount();
+    }
+    
 
     /*** Helpers ***/
     function _updateProcessedTime() private {
@@ -205,7 +215,7 @@ contract Celery is ERC20 {
     4) Update Account last calculation time and subtract payout amount from account staked amount.
         
     */
-    function _processPayoutToAccount() private {
+    function _processNormalPayoutToAccount() private {
       _updateProcessedTime();
 
       // Get the latest block timestamp.
@@ -264,6 +274,25 @@ contract Celery is ERC20 {
       
       // Subtract payout amount from staked amount.
       _accounts[msg.sender].stakedAmount -= payoutAmount;
+    }
+
+    /*
+    Private Function
+    Processes the full payout (with penalty) back to the account address.
+    */
+    function _processFullPayoutToAccount() private {
+      _updateProcessedTime();
+
+      uint256 stakedAmount = _accounts[msg.sender].stakedAmount;
+      
+      // Apply 50% penalty to staked amount
+      uint256 payoutAmount = stakedAmount / 2;
+      
+      // Set staked amount to 0
+      _accounts[msg.sender].stakedAmount = 0;
+      
+      // Send tokens to account address.
+      _payoutAmountToAccount(payoutAmount);
     }
     
     /*
