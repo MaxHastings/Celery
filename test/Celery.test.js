@@ -1,5 +1,6 @@
 // test/Celery.test.js
 // Load dependencies
+const { BigNumber } = require("@ethersproject/bignumber");
 const { expect } = require("chai");
 const hre = require("hardhat");
 
@@ -30,7 +31,7 @@ describe("Celery", function () {
 
   // Test case
   it("Test if staking amount doubles in a year", async function () {
-    await Stake.bind(this)(100000000, 31536000);
+    await StakeAmountForTime.bind(this)(100000000, 31536000);
 
     // Test if account staking balance doubled
     await expectStakedAmount(this.owner.address, 200000000);
@@ -39,8 +40,8 @@ describe("Celery", function () {
     await expectAccountBalance(this.owner.address, 0);
   });
 
-  // Helper function for account staking of time length and doubling staked amount
-  async function Stake(amount, time) {
+  // Helper function for account staking of time length
+  async function StakeAmountForTime(amount, time) {
     // Increase Stake
     await Celery.IncreaseStake(amount);
 
@@ -55,10 +56,11 @@ describe("Celery", function () {
     // Start payout
     await Celery.StartPayout();
 
-    const timePayout = await Celery.getLastProcessedTime(this.owner.address);
-
     // Test if last processed time is correct
-    expect((timePayout - timeStaked).toString()).to.equal(time.toString());
+    expectLastProcessedTime(
+      this.owner.address,
+      BigNumber.from(time).add(timeStaked)
+    );
 
     // Test if account status is payout
     await expectStatus(this.owner.address, 0);
@@ -123,7 +125,7 @@ describe("Celery", function () {
 
   // Test case
   it("Test if payout is half amount in a year", async function () {
-    await Stake.bind(this)(100000000, 31536000);
+    await StakeAmountForTime.bind(this)(100000000, 31536000);
 
     // Wait half year in block time
     await increaseBlockTime(15768000);
@@ -146,7 +148,7 @@ describe("Celery", function () {
 
   // Test case
   it("Test if contract mints tokens on payout", async function () {
-    await Stake.bind(this)(100000000, 63072000);
+    await StakeAmountForTime.bind(this)(100000000, 63072000);
 
     // Test if account staked balance is 4x
     await expectStakedAmount(this.owner.address, 400000000);
@@ -168,7 +170,7 @@ describe("Celery", function () {
 
   // Test case
   it("Test if contract penalizes immediate payout by 50%", async function () {
-    await Stake.bind(this)(100000000, 31536000);
+    await StakeAmountForTime.bind(this)(100000000, 31536000);
 
     // Test if account staked balance is 2x
     await expectStakedAmount(this.owner.address, 200000000);
@@ -190,7 +192,7 @@ describe("Celery", function () {
 
   // Test case
   it("Test if contract gives back no more than entire staked amount%", async function () {
-    await Stake.bind(this)(100000000, 31536000);
+    await StakeAmountForTime.bind(this)(100000000, 31536000);
 
     // Test if account staked balance is 2x
     await expectStakedAmount(this.owner.address, 200000000);
