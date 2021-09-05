@@ -46,6 +46,8 @@ describe("Celery", function() {
         // Increase Stake
         await this.Celery.IncreaseStake(amount);
 
+        const timeStaked = await this.Celery.getLastProcessedTime(this.owner.address);
+
         // Test if account status is staking
         expect(
             (await this.Celery.getStatus(this.owner.address)).toString()
@@ -57,10 +59,27 @@ describe("Celery", function() {
         // Start payout
         await this.Celery.StartPayout();
 
+        const timePayout = await this.Celery.getLastProcessedTime(this.owner.address);
+
+        // Test if last processed time is correct
+        expect((timePayout - timeStaked).toString()).to.equal(time.toString())
+
         // Test if account status is payout
         expect(
             (await this.Celery.getStatus(this.owner.address)).toString()
         ).to.equal("0");
+
+        // Test current payout amount is correct
+        expect(
+            (await this.Celery.getCurrentPayoutAmount(this.owner.address)).toString()
+        ).to.equal(calculateStake(amount, 0, time).toString());
+    }
+
+    function calculateStake(amount, startTime, endTime) {
+        const secondsInAYear = 31536000;
+        const diffTime = endTime - startTime;
+        const percTime = diffTime / secondsInAYear;
+        return Math.round(amount * Math.pow(Math.E, percTime * Math.LN2))
     }
 
     // Test case
@@ -131,13 +150,15 @@ describe("Celery", function() {
             (await this.Celery.getAmount(this.owner.address)).toString()
         ).to.equal("200000000");
 
+        await hre.network.provider.send("evm_increaseTime", [15768000]);
+
         // Collect Payout
         await this.Celery.CollectAll();
 
         // Test if account balance received 50% of staked tokens
         expect(
             (await this.Celery.balanceOf(this.owner.address)).toString()
-        ).to.equal("100000000");
+        ).to.equal("150000000");
         // Test if account staked balance is set back to 0
         expect(
             (await this.Celery.getAmount(this.owner.address)).toString()
@@ -146,6 +167,31 @@ describe("Celery", function() {
         // Test if contract balance is subtracted
         expect(
             (await this.Celery.balanceOf(this.Celery.address)).toString()
+        ).to.equal("0");
+    });
+
+    // Test case
+    it("Test if contract gives back no more than entire staked amount%", async function() {
+        await Stake.bind(this)(100000000, 31536000);
+
+        // Test if account staked balance is 2x
+        expect(
+            (await this.Celery.getAmount(this.owner.address)).toString()
+        ).to.equal("200000000");
+
+        // Wait many years
+        await hre.network.provider.send("evm_increaseTime", [9931536000]);
+
+        // Collect Payout
+        await this.Celery.CollectPayout();
+
+        // Test if account balance received all staked tokens
+        expect(
+            (await this.Celery.balanceOf(this.owner.address)).toString()
+        ).to.equal("200000000");
+        // Test if account staked balance is set back to 0
+        expect(
+            (await this.Celery.getAmount(this.owner.address)).toString()
         ).to.equal("0");
     });
 });

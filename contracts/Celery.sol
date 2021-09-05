@@ -123,6 +123,7 @@ contract Celery is ERC20 {
     */
     function CollectAll() public {
         StartPayout();
+        _processNormalPayoutToAccount();
         _processFullPayoutToAccount();
     }
     /*** ***/
