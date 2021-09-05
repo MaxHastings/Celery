@@ -21,16 +21,6 @@ contract Celery is ERC20 {
         approve(msg.sender, initialSupply); //Approves the initial supply for the sender to use
     }
     
-    uint256 fakeBlockTime;
-    
-    function setFakeBlocktime(uint256 time) public {
-        fakeBlockTime = time;
-    }
-    
-    function getFakeBlockTime() public view returns (uint256) {
-        return fakeBlockTime;
-    }
-    
     /*** Public read functions ***/
 
     // Returns how much Celery is staked within the contract for a particular address
@@ -161,7 +151,7 @@ contract Celery is ERC20 {
 
     /*** Helpers ***/
     function _updateProcessedTime() private {
-        _accounts[msg.sender].lastProcessedTime = fakeBlockTime;
+        _accounts[msg.sender].lastProcessedTime = block.timestamp;
     }
 
     function _isAccountInPayout() private view returns (bool) {
@@ -216,7 +206,7 @@ contract Celery is ERC20 {
     */
     function _calculateStakedAmount() private {
         // Snapshot seconds staked
-        uint256 secondsStakedNorm = fakeBlockTime -
+        uint256 secondsStakedNorm = block.timestamp -
             _accounts[msg.sender].lastProcessedTime;
         uint256 currStakedNorm = _accounts[msg.sender].stakedAmount;
 
@@ -269,7 +259,7 @@ contract Celery is ERC20 {
     */
     function _processNormalPayoutToAccount() private {
         // Get the latest block timestamp.
-        uint256 timeStamp = fakeBlockTime;
+        uint256 timeStamp = block.timestamp;
 
         // Snapshot the last time account payout was processed.
         uint256 lastTime = _accounts[msg.sender].lastProcessedTime;
