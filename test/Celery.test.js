@@ -3,195 +3,227 @@
 const { expect } = require("chai");
 const hre = require("hardhat");
 
+var Celery;
+
+const initialSupply = 100000000;
+
 // Start test Celery
-describe("Celery", function() {
-    before(async function() {
-        this.CeleryFactory = await ethers.getContractFactory("Celery");
-        this.owner = (await ethers.getSigners())[0];
-    });
+describe("Celery", function () {
+  before(async function () {
+    this.CeleryFactory = await ethers.getContractFactory("Celery");
+    this.owner = (await ethers.getSigners())[0];
+  });
 
-    beforeEach(async function() {
-        this.Celery = await this.CeleryFactory.deploy(100000000);
-        await this.Celery.deployed();
-    });
+  beforeEach(async function () {
+    Celery = await this.CeleryFactory.deploy(initialSupply);
+    await Celery.deployed();
+  });
 
-    // Test case
-    it("Test if start stake changes account status to staking", async function() {
-        // Start Stake
-        await this.Celery.StartStake();
+  // Test case
+  it("Test if start stake changes account status to staking", async function () {
+    // Start Stake
+    await Celery.StartStake();
 
-        // Test if account status is staking
-        expect(
-            (await this.Celery.getStatus(this.owner.address)).toString()
-        ).to.equal("1");
-    });
+    // Test if account status is staking
+    await expectStatus(this.owner.address, 1);
+  });
 
-    // Test case
-    it("Test if staking amount doubles in a year", async function() {
-        await Stake.bind(this)(100000000, 31536000);
+  // Test case
+  it("Test if staking amount doubles in a year", async function () {
+    await Stake.bind(this)(100000000, 31536000);
 
-        // Test if account staking balance doubled
-        expect(
-            (await this.Celery.getAmount(this.owner.address)).toString()
-        ).to.equal("200000000");
+    // Test if account staking balance doubled
+    await expectStakedAmount(this.owner.address, 200000000);
 
-        // Test if account balance is 0
-        expect(
-            (await this.Celery.balanceOf(this.owner.address)).toString()
-        ).to.equal("0");
-    });
+    // Test if account balance is 0
+    await expectAccountBalance(this.owner.address, 0);
+  });
 
-    // Helper function for account staking for 1 year and doubling staked amount
-    async function Stake(amount, time) {
-        // Increase Stake
-        await this.Celery.IncreaseStake(amount);
+  // Helper function for account staking of time length and doubling staked amount
+  async function Stake(amount, time) {
+    // Increase Stake
+    await Celery.IncreaseStake(amount);
 
-        const timeStaked = await this.Celery.getLastProcessedTime(this.owner.address);
+    const timeStaked = await Celery.getLastProcessedTime(this.owner.address);
 
-        // Test if account status is staking
-        expect(
-            (await this.Celery.getStatus(this.owner.address)).toString()
-        ).to.equal("1");
+    // Test if account status is staking
+    await expectStatus(this.owner.address, 1);
 
-        // Wait seconds in block time
-        await hre.network.provider.send("evm_increaseTime", [time]);
+    // Wait seconds in block time
+    await increaseBlockTime(time);
 
-        // Start payout
-        await this.Celery.StartPayout();
+    // Start payout
+    await Celery.StartPayout();
 
-        const timePayout = await this.Celery.getLastProcessedTime(this.owner.address);
+    const timePayout = await Celery.getLastProcessedTime(this.owner.address);
 
-        // Test if last processed time is correct
-        expect((timePayout - timeStaked).toString()).to.equal(time.toString())
+    // Test if last processed time is correct
+    expect((timePayout - timeStaked).toString()).to.equal(time.toString());
 
-        // Test if account status is payout
-        expect(
-            (await this.Celery.getStatus(this.owner.address)).toString()
-        ).to.equal("0");
+    // Test if account status is payout
+    await expectStatus(this.owner.address, 0);
 
-        // Test current payout amount is correct
-        expect(
-            (await this.Celery.getCurrentPayoutAmount(this.owner.address)).toString()
-        ).to.equal(calculateStake(amount, 0, time).toString());
-    }
+    // Test current payout amount is correct
+    const calcStakeAmount = calculateStake(amount, 0, time);
+    await expectPayoutAmount(this.owner.address, calcStakeAmount);
 
-    function calculateStake(amount, startTime, endTime) {
-        const secondsInAYear = 31536000;
-        const diffTime = endTime - startTime;
-        const percTime = diffTime / secondsInAYear;
-        return Math.round(amount * Math.pow(Math.E, percTime * Math.LN2))
-    }
+    // Test staked amount is correct
+    await expectStakedAmount(this.owner.address, calcStakeAmount);
+  }
 
-    // Test case
-    it("Test if payout is half amount in a year", async function() {
-        await Stake.bind(this)(100000000, 31536000);
+  // *** Helper Functions *** //
 
-        // Wait half year in block time
-        await hre.network.provider.send("evm_increaseTime", [15768000]);
+  function calculateStake(amount, startTime, endTime) {
+    const secondsInAYear = 31536000;
+    const diffTime = endTime - startTime;
+    const percTime = diffTime / secondsInAYear;
+    return Math.round(amount * Math.pow(Math.E, percTime * Math.LN2));
+  }
 
-        // Collect Payout for half year
-        await this.Celery.CollectPayout();
+  // *** Expect Functions *** //
 
-        // Test if account status is payuot
-        expect(
-            (await this.Celery.getStatus(this.owner.address)).toString()
-        ).to.equal("0");
+  async function expectAccountBalance(address, amount) {
+    expect((await Celery.balanceOf(address)).toString()).to.equal(
+      amount.toString()
+    );
+  }
 
-        // Test if account staked balance is halved
-        expect(
-            (await this.Celery.getAmount(this.owner.address)).toString()
-        ).to.equal("100000000");
+  async function expectStakedAmount(address, amount) {
+    expect((await Celery.getStakedAmount(address)).toString()).to.equal(
+      amount.toString()
+    );
+  }
 
-        // Test if payout was added to account balance
-        expect(
-            (await this.Celery.balanceOf(this.owner.address)).toString()
-        ).to.equal("100000000");
+  async function expectPayoutAmount(address, amount) {
+    expect((await Celery.getCurrentPayoutAmount(address)).toString()).to.equal(
+      amount.toString()
+    );
+  }
 
-        // Test if contract balance is subtracted
-        expect(
-            (await this.Celery.balanceOf(this.Celery.address)).toString()
-        ).to.equal("0");
-    });
+  async function expectLastProcessedTime(address, time) {
+    expect((await Celery.getLastProcessedTime(address)).toString()).to.equal(
+      time.toString()
+    );
+  }
 
-    // Test case
-    it("Test if contract mints tokens on payout", async function() {
-        await Stake.bind(this)(100000000, 63072000);
+  async function expectStatus(address, status) {
+    expect((await Celery.getStatus(address)).toString()).to.equal(
+      status.toString()
+    );
+  }
 
-        // Test if account staked balance is 4x
-        expect(
-            (await this.Celery.getAmount(this.owner.address)).toString()
-        ).to.equal("400000000");
+  async function expectTotalSupply(amount) {
+    expect((await Celery.totalSupply()).toString()).to.equal(amount.toString());
+  }
 
-        // Wait 1 year in block time
-        await hre.network.provider.send("evm_increaseTime", [31536000]);
+  async function increaseBlockTime(time) {
+    // Wait half year in block time
+    await hre.network.provider.send("evm_increaseTime", [time]);
+  }
 
-        // Collect Payout
-        await this.Celery.CollectPayout();
+  // Test case
+  it("Test if payout is half amount in a year", async function () {
+    await Stake.bind(this)(100000000, 31536000);
 
-        // Test if account balance received all staked tokens
-        expect(
-            (await this.Celery.balanceOf(this.owner.address)).toString()
-        ).to.equal("400000000");
+    // Wait half year in block time
+    await increaseBlockTime(15768000);
 
-        // Test if token total supply is 5x
-        expect((await this.Celery.totalSupply()).toString()).to.equal("500000000");
-        // Test if contract balance is holding initial stake
-        expect(
-            (await this.Celery.balanceOf(this.Celery.address)).toString()
-        ).to.equal("100000000");
-    });
+    // Collect Payout for half year
+    await Celery.CollectPayout();
 
-    // Test case
-    it("Test if contract penalizes immediate payout by 50%", async function() {
-        await Stake.bind(this)(100000000, 31536000);
+    // Test if account status is payuot
+    await expectStatus(this.owner.address, 0);
 
-        // Test if account staked balance is 2x
-        expect(
-            (await this.Celery.getAmount(this.owner.address)).toString()
-        ).to.equal("200000000");
+    // Test if account staked balance is halved
+    await expectStakedAmount(this.owner.address, initialSupply);
 
-        await hre.network.provider.send("evm_increaseTime", [15768000]);
+    // Test if payout was added to account balance
+    await expectAccountBalance(this.owner.address, 100000000);
 
-        // Collect Payout
-        await this.Celery.CollectAll();
+    // Test if contract balance is subtracted
+    await expectAccountBalance(Celery.address, 0);
+  });
 
-        // Test if account balance received 50% of staked tokens
-        expect(
-            (await this.Celery.balanceOf(this.owner.address)).toString()
-        ).to.equal("150000000");
-        // Test if account staked balance is set back to 0
-        expect(
-            (await this.Celery.getAmount(this.owner.address)).toString()
-        ).to.equal("0");
+  // Test case
+  it("Test if contract mints tokens on payout", async function () {
+    await Stake.bind(this)(100000000, 63072000);
 
-        // Test if contract balance is subtracted
-        expect(
-            (await this.Celery.balanceOf(this.Celery.address)).toString()
-        ).to.equal("0");
-    });
+    // Test if account staked balance is 4x
+    await expectStakedAmount(this.owner.address, 400000000);
 
-    // Test case
-    it("Test if contract gives back no more than entire staked amount%", async function() {
-        await Stake.bind(this)(100000000, 31536000);
+    // Wait 1 year in block time
+    await increaseBlockTime(31536000);
 
-        // Test if account staked balance is 2x
-        expect(
-            (await this.Celery.getAmount(this.owner.address)).toString()
-        ).to.equal("200000000");
+    // Collect Payout
+    await Celery.CollectPayout();
 
-        // Wait many years
-        await hre.network.provider.send("evm_increaseTime", [9931536000]);
+    // Test if account balance received all staked tokens
+    await expectAccountBalance(this.owner.address, 400000000);
 
-        // Collect Payout
-        await this.Celery.CollectPayout();
+    // Test if token total supply is 5x
+    await expectTotalSupply(500000000);
+    // Test if contract balance is holding initial stake
+    await expectAccountBalance(Celery.address, 100000000);
+  });
 
-        // Test if account balance received all staked tokens
-        expect(
-            (await this.Celery.balanceOf(this.owner.address)).toString()
-        ).to.equal("200000000");
-        // Test if account staked balance is set back to 0
-        expect(
-            (await this.Celery.getAmount(this.owner.address)).toString()
-        ).to.equal("0");
-    });
+  // Test case
+  it("Test if contract penalizes immediate payout by 50%", async function () {
+    await Stake.bind(this)(100000000, 31536000);
+
+    // Test if account staked balance is 2x
+    await expectStakedAmount(this.owner.address, 200000000);
+
+    await increaseBlockTime(15768000);
+
+    // Collect Payout
+    await Celery.CollectAll();
+
+    // Test if account balance received 50% of staked tokens
+    await expectAccountBalance(this.owner.address, 150000000);
+
+    // Test if account staked balance is set back to 0
+    await expectStakedAmount(this.owner.address, 0);
+
+    // Test if contract balance is subtracted
+    await expectAccountBalance(Celery.address, 0);
+  });
+
+  // Test case
+  it("Test if contract gives back no more than entire staked amount%", async function () {
+    await Stake.bind(this)(100000000, 31536000);
+
+    // Test if account staked balance is 2x
+    await expectStakedAmount(this.owner.address, 200000000);
+
+    // Wait many years
+    await increaseBlockTime(9931536000);
+
+    // Collect Payout
+    await Celery.CollectPayout();
+
+    // Test if account balance received all staked tokens
+    await expectAccountBalance(this.owner.address, 200000000);
+    // Test if account staked balance is set back to 0
+    await expectStakedAmount(this.owner.address, 0);
+  });
+
+  // Test case
+  it("Test start stake twice", async function () {
+    // Collect Payout
+    await Celery.StartStake();
+
+    // Collect Payout
+    await Celery.StartStake();
+  });
+
+  // Test case
+  it("Test collecet with nothing staked", async function () {
+    // Collect Payout
+    await Celery.CollectPayout();
+    // Test if account staked balance is set back to 0
+    await expectStakedAmount(this.owner.address, 0);
+
+    // Test if account balance received all staked tokens
+    await expectAccountBalance(this.owner.address, 100000000);
+  });
 });
