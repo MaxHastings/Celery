@@ -20,7 +20,17 @@ contract Celery is ERC20 {
         _mint(msg.sender, initialSupply); // Create initial supply
         approve(msg.sender, initialSupply); //Approves the initial supply for the sender to use
     }
-
+    
+    uint256 fakeBlockTime;
+    
+    function setFakeBlocktime(uint256 time) public {
+        fakeBlockTime = time;
+    }
+    
+    function getFakeBlockTime() public view returns (uint256) {
+        return fakeBlockTime;
+    }
+    
     /*** Public read functions ***/
 
     // Returns how much Celery is staked within the contract for a particular address
@@ -151,7 +161,7 @@ contract Celery is ERC20 {
 
     /*** Helpers ***/
     function _updateProcessedTime() private {
-        _accounts[msg.sender].lastProcessedTime = block.timestamp;
+        _accounts[msg.sender].lastProcessedTime = fakeBlockTime;
     }
 
     function _isAccountInPayout() private view returns (bool) {
@@ -206,7 +216,7 @@ contract Celery is ERC20 {
     */
     function _calculateStakedAmount() private {
         // Snapshot seconds staked
-        uint256 secondsStakedNorm = block.timestamp -
+        uint256 secondsStakedNorm = fakeBlockTime -
             _accounts[msg.sender].lastProcessedTime;
         uint256 currStakedNorm = _accounts[msg.sender].stakedAmount;
 
@@ -235,7 +245,10 @@ contract Celery is ERC20 {
         uint256 rateTime = PRBMathUD60x18.mul(interest, percentageYearStaked);
         uint256 compoundedRate = PRBMathUD60x18.pow(euler, rateTime);
         uint256 newAmount = PRBMathUD60x18.mul(currStaked, compoundedRate);
-        uint256 newAmountNorm = PRBMathUD60x18.toUint(newAmount);
+        
+        // Round New Amount Up
+        uint256 newAmountCeil = PRBMathUD60x18.ceil(newAmount);
+        uint256 newAmountNorm = PRBMathUD60x18.toUint(newAmountCeil);
 
         _accounts[msg.sender].stakedAmount = newAmountNorm;
     }
@@ -256,7 +269,7 @@ contract Celery is ERC20 {
     */
     function _processNormalPayoutToAccount() private {
         // Get the latest block timestamp.
-        uint256 timeStamp = block.timestamp;
+        uint256 timeStamp = fakeBlockTime;
 
         // Snapshot the last time account payout was processed.
         uint256 lastTime = _accounts[msg.sender].lastProcessedTime;
@@ -305,9 +318,12 @@ contract Celery is ERC20 {
             payoutPeriodPercentage,
             payoutAmountSnapshot
         );
+        
+        // Round max payout up
+        uint256 maxPayoutAmountCeil = PRBMathUD60x18.ceil(maxPayoutAmount);
 
         // Convert payout amount back to normal integer.
-        uint256 maxPayoutAmountNorm = PRBMathUD60x18.toUint(maxPayoutAmount);
+        uint256 maxPayoutAmountNorm = PRBMathUD60x18.toUint(maxPayoutAmountCeil);
 
         uint256 payoutAmount;
 
