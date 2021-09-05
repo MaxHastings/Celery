@@ -16,8 +16,6 @@ contract TokenSale {
         TokenPrice = price;
     }
 
-    event Sold(address buyer, uint256 amount);
-
     function BuyTokens(uint256 numberOfTokens) public payable {
         require(SaleActive, "The Celery token sale has ended");
         require(
@@ -33,19 +31,21 @@ contract TokenSale {
             "Token sale contract does not have enough Celery"
         );
 
-        emit Sold(msg.sender, numberOfTokens);
         TokensSold += numberOfTokens;
-
         require(TokenContract.transfer(msg.sender, scaledAmount));
+
+        emit SoldEvent(msg.sender, numberOfTokens);
     }
 
     function StartSale() public {
         _ownerCheck();
         SaleActive = true;
+        emit StartSaleEvent();
     }
 
     function EndSale() public {
         _ownerCheck();
+        
         // Send unsold tokens to the owner.
         require(
             TokenContract.transfer(
@@ -57,9 +57,16 @@ contract TokenSale {
         payable(msg.sender).transfer(address(this).balance);
 
         SaleActive = false;
+        emit EndSaleEvent();
     }
 
     function _ownerCheck() private view {
         require(msg.sender == _owner, "You must be the owner");
     }
+
+    /*** Events ***/
+    event SoldEvent(address buyer, uint256 amount);
+    event StartSaleEvent();
+    event EndSaleEvent();
+    /*** ***/
 }
