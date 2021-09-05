@@ -91,11 +91,17 @@ describe("Celery", function () {
 
       // Calculate new staked amouont
       stakedAmount =
-        calculateStake(stakedAmount, 0, increaseTime) + increaseStakeAmount;
+        calculateStake(stakedAmount, increaseTime) + increaseStakeAmount;
       // Staked amount should increase by staked + interest + stake added
       await expectStakedAmount(this.owner.address, stakedAmount);
+
+      // Account balance should decrease incrementally
+      await expectAccountBalance(
+        this.owner.address,
+        initialSupply - increaseStakeAmount * (i + 1)
+      );
     }
-    // Test if account status is payout
+    // Test if account status is staking
     await expectStatus(this.owner.address, 1);
     // Test if last process time increased
     await expectLastProcessedTime(this.owner.address, await getLastBlockTime());
@@ -164,12 +170,13 @@ describe("Celery", function () {
     // Test if account staked balance is 2x
     await expectStakedAmount(this.owner.address, 200000000);
 
+    // Wait half a year
     await increaseBlockTime(15768000);
 
-    // Collect Payout
+    // Collect entire payout
     await Celery.CollectAll();
 
-    // Test if account balance received 50% of staked tokens
+    // Test if account balance received 75% of staked tokens. Half of tokens penalized by 50% and half not penalized
     await expectAccountBalance(this.owner.address, 150000000);
 
     // Test if account staked balance is set back to 0
@@ -186,8 +193,8 @@ describe("Celery", function () {
     // Test if account staked balance is 2x
     await expectStakedAmount(this.owner.address, 200000000);
 
-    // Wait many years
-    await increaseBlockTime(9931536000);
+    // Wait 10 years
+    await increaseBlockTime(31536000 * 10);
 
     // Collect Payout
     await Celery.CollectPayout();
@@ -200,21 +207,27 @@ describe("Celery", function () {
 
   // Test case
   it("Test start stake twice", async function () {
-    // Collect Payout
+    // Start Stake
     await Celery.StartStake();
 
-    // Collect Payout
+    // Start Stake
     await Celery.StartStake();
+
+    // Test if accuont status is staking
+    await expectStatus(this.owner.address, 1);
   });
 
   // Test case
-  it("Test collecet with nothing staked", async function () {
+  it("Test collect with nothing staked", async function () {
     // Collect Payout
     await Celery.CollectPayout();
-    // Test if account staked balance is set back to 0
+    // Test if account staked balance still 0
     await expectStakedAmount(this.owner.address, 0);
 
-    // Test if account balance received all staked tokens
+    // Test that account status is in payout
+    await expectStatus(this.owner.address, 0);
+
+    // Test if account balance still has same number of tokens
     await expectAccountBalance(this.owner.address, 100000000);
   });
 });
@@ -247,17 +260,16 @@ async function StakeAmountForTime(amount, time) {
   await expectStatus(this.owner.address, 0);
 
   // Test current payout amount is correct
-  const calcStakeAmount = calculateStake(amount, 0, time);
+  const calcStakeAmount = calculateStake(amount, time);
   await expectPayoutAmount(this.owner.address, calcStakeAmount);
 
   // Test staked amount is correct
   await expectStakedAmount(this.owner.address, calcStakeAmount);
 }
 
-function calculateStake(amount, startTime, endTime) {
+function calculateStake(amount, stakedTime) {
   const secondsInAYear = 31536000;
-  const diffTime = endTime - startTime;
-  const percTime = diffTime / secondsInAYear;
+  const percTime = stakedTime / secondsInAYear;
   return Math.ceil(amount * Math.pow(Math.E, percTime * Math.LN2));
 }
 
