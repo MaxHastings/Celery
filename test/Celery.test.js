@@ -28,6 +28,21 @@ describe("Celery", function () {
 
   // Test case
   it("Test if staking amount doubles in a year", async function () {
+    await DoubleStakedAmount.bind(this)();
+
+    // Test if account staking balance doubled
+    expect(
+      (await this.Celery.getStakedAmount(this.owner.address)).toString()
+    ).to.equal("200000000");
+
+    // Test if account balance is 0
+    expect(
+      (await this.Celery.balanceOf(this.owner.address)).toString()
+    ).to.equal("0");
+  });
+
+  // Helper function for account staking for 1 year and doubling staked amount
+  async function DoubleStakedAmount() {
     // Increase Stake
     await this.Celery.IncreaseStake(100000000);
 
@@ -36,10 +51,26 @@ describe("Celery", function () {
 
     // Start payout
     await this.Celery.StartPayout();
+  }
 
-    // Test if account staking balance doubled
+  // Test case
+  it("Test if payout is half amount in a year", async function () {
+    await DoubleStakedAmount.bind(this)();
+
+    // Wait half year in block time
+    await hre.network.provider.send("evm_increaseTime", [15768000]);
+
+    // Collect Payout for half year
+    await this.Celery.CollectPayout();
+
+    // Test if account staked balance is halved
     expect(
       (await this.Celery.getStakedAmount(this.owner.address)).toString()
-    ).to.equal("200000000");
+    ).to.equal("100000000");
+
+    // Test if payout was added to account balance
+    expect(
+      (await this.Celery.balanceOf(this.owner.address)).toString()
+    ).to.equal("100000000");
   });
 });

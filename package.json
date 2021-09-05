@@ -13,7 +13,8 @@
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "chai": "^4.3.4",
     "ethers": "^5.4.6",
-    "hardhat": "^2.6.2"
+    "hardhat": "^2.6.2",
+    "solidity-coverage": "^0.7.17"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
