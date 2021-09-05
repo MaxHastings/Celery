@@ -28,7 +28,7 @@ contract Celery is ERC20 {
     }
     
     /*** Public read functions ***/
-    function getAmount(address addr) public view returns (uint256) {
+    function getStakedAmount(address addr) public view returns (uint256) {
         return _accounts[addr].amount;
     }
     
@@ -56,7 +56,7 @@ contract Celery is ERC20 {
     Ensure in stake stage and if not, switch (and also do a collect payout)
     */
     function StartStake() public {
-        // Check if Account is already in Stake phase, throw if so
+        // Check if Account is already in Stake phase, return if so
         if (_isAccountInStake()) {
             return;
         }
@@ -123,6 +123,7 @@ contract Celery is ERC20 {
     */
     function CollectAll() public {
         StartPayout();
+        _processNormalPayoutToAccount();
         _processFullPayoutToAccount();
     }
     /*** ***/

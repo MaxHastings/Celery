@@ -18,6 +18,7 @@ npx hardhat accounts
 npx hardhat compile
 npx hardhat clean
 npx hardhat test
+npx hardhat coverage
 npx hardhat node
 npx hardhat help
 ```
