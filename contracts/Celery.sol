@@ -121,9 +121,9 @@ contract Celery is ERC20 {
     Collect entire staked amount with 50% penalty
     Returns the amount that was sent from the contract back to your account
     */
-    function CollectAll() public returns (uint256) {
+    function CollectAll() public {
         StartPayout();
-        return _processFullPayoutToAccount();
+        _processFullPayoutToAccount();
     }
     /*** ***/
 
@@ -282,9 +282,8 @@ contract Celery is ERC20 {
     /*
     Private Function
     Processes the full payout (with penalty) back to the account address.
-    Returns total payout
     */
-    function _processFullPayoutToAccount() private returns (uint256) {
+    function _processFullPayoutToAccount() private {
         // Apply 50% penalty to staked amount
         uint256 payoutAmount = _getAmount() / 2;
 
@@ -297,8 +296,6 @@ contract Celery is ERC20 {
         
         // Notify that an account collected entire payout with penalty
         emit CollectAllEvent(msg.sender, payoutAmount);
-
-        return payoutAmount;
     }
 
     /*
