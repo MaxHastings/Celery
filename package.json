@@ -1,32 +1,32 @@
 {
-  "name": "fixedannuitystaking",
-  "version": "1.0.0",
-  "description": "",
-  "main": "",
-  "dependencies": {
-    "@openzeppelin/contracts": "^4.3.1",
-    "prb-math": "^2.2.0",
-    "solc": "^0.8.7-fixed"
-  },
-  "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.2",
-    "@nomiclabs/hardhat-waffle": "^2.0.1",
-    "chai": "^4.3.4",
-    "ethers": "^5.4.6",
-    "hardhat": "^2.6.2",
-    "solidity-coverage": "^0.7.17"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MaxHastings/FixedAnnuityStaking.git"
-  },
-  "author": "",
-  "license": "Closed Source Private",
-  "bugs": {
-    "url": "https://github.com/MaxHastings/FixedAnnuityStaking/issues"
-  },
-  "homepage": "https://github.com/MaxHastings/FixedAnnuityStaking#readme"
+    "name": "fixedannuitystaking",
+    "version": "1.0.0",
+    "description": "",
+    "main": "",
+    "dependencies": {
+        "@openzeppelin/contracts": "^4.3.1",
+        "prb-math": "^2.2.0",
+        "solc": "^0.8.7-fixed"
+    },
+    "devDependencies": {
+        "@nomiclabs/hardhat-ethers": "^2.0.2",
+        "@nomiclabs/hardhat-waffle": "^2.0.1",
+        "chai": "^4.3.4",
+        "ethers": "^5.4.6",
+        "hardhat": "^2.6.2",
+        "solidity-coverage": "^0.7.17"
+    },
+    "scripts": {
+        "test": "npx hardhat accounts && npx hardhat compile && npx hardhat clean && npx hardhat test"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/MaxHastings/FixedAnnuityStaking.git"
+    },
+    "author": "",
+    "license": "Closed Source Private",
+    "bugs": {
+        "url": "https://github.com/MaxHastings/FixedAnnuityStaking/issues"
+    },
+    "homepage": "https://github.com/MaxHastings/FixedAnnuityStaking#readme"
 }
