@@ -27,7 +27,7 @@ contract TokenSale {
             (uint256(10)**TokenContract.decimals());
 
         require(
-            TokenContract.balanceOf(address(this)) >= scaledAmount,
+            scaledAmount >= TokenContract.balanceOf(address(this)),
             "Token sale contract does not have enough Celery"
         );
 
