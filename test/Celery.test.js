@@ -30,6 +30,78 @@ describe("Celery", function () {
   });
 
   // Test case
+  it("Test if account defaults to payout status", async function () {
+    // Test if account status is payout
+    await expectStatus(this.owner.address, 0);
+  });
+
+  // Test case
+  it("Test if Collect All on nothing staked", async function () {
+    // Start Stake
+    await Celery.CollectAll();
+    // Test if account status is payout
+    await expectStatus(this.owner.address, 0);
+    // Test if last process time increased
+    await expectLastProcessedTime(this.owner.address, await getLastBlockTime());
+  });
+
+  // Test case
+  it("Test Collect Payout 10 times in one year", async function () {
+    // Stake token and double it over a year
+    await StakeAmountForTime.bind(this)(100000000, 31536000);
+
+    var stakedAmount = 200000000;
+    await expectStakedAmount(this.owner.address, stakedAmount);
+    var increments = 10;
+    for (var i = 1; i <= increments; i++) {
+      await increaseBlockTime((1 / increments) * 31536000);
+      await Celery.CollectPayout();
+
+      // Calculate amount paid out
+      const incrementalAmount = (i / increments) * stakedAmount;
+      // Staked amount should decrease by incremental amount
+      await expectStakedAmount(
+        this.owner.address,
+        stakedAmount - incrementalAmount
+      );
+      // Account balance should increase by incremental amount
+      await expectAccountBalance(this.owner.address, incrementalAmount);
+    }
+
+    await expectStakedAmount(this.owner.address, 0);
+    await expectAccountBalance(this.owner.address, 200000000);
+    // Test if account status is payout
+    await expectStatus(this.owner.address, 0);
+    // Test if last process time increased
+    await expectLastProcessedTime(this.owner.address, await getLastBlockTime());
+  });
+
+  // Test case
+  it("Test increase stake 10 times in one year", async function () {
+    var increments = 10;
+    var increaseStakeAmount = initialSupply / increments;
+    await Celery.IncreaseStake(increaseStakeAmount);
+    var stakedAmount = increaseStakeAmount;
+    await expectStakedAmount(this.owner.address, increaseStakeAmount);
+
+    for (var i = 1; i < increments; i++) {
+      const increaseTime = (1 / increments) * 31536000;
+      await increaseBlockTime(increaseTime);
+      await Celery.IncreaseStake(increaseStakeAmount);
+
+      // Calculate new staked amouont
+      stakedAmount =
+        calculateStake(stakedAmount, 0, increaseTime) + increaseStakeAmount;
+      // Staked amount should increase by staked + interest + stake added
+      await expectStakedAmount(this.owner.address, stakedAmount);
+    }
+    // Test if account status is payout
+    await expectStatus(this.owner.address, 1);
+    // Test if last process time increased
+    await expectLastProcessedTime(this.owner.address, await getLastBlockTime());
+  });
+
+  // Test case
   it("Test if staking amount doubles in a year", async function () {
     await StakeAmountForTime.bind(this)(100000000, 31536000);
 
@@ -186,7 +258,7 @@ function calculateStake(amount, startTime, endTime) {
   const secondsInAYear = 31536000;
   const diffTime = endTime - startTime;
   const percTime = diffTime / secondsInAYear;
-  return Math.round(amount * Math.pow(Math.E, percTime * Math.LN2));
+  return Math.ceil(amount * Math.pow(Math.E, percTime * Math.LN2));
 }
 
 // *** Expect Functions *** //
@@ -225,9 +297,13 @@ async function expectTotalSupply(amount) {
   expect((await Celery.totalSupply()).toString()).to.equal(amount.toString());
 }
 
+async function getLastBlockTime() {
+  return (await ethers.provider.getBlock("latest")).timestamp;
+}
+
 // Increase block timestamp by number of seconds
 async function increaseBlockTime(time) {
-  const lastBlockTime = (await ethers.provider.getBlock("latest")).timestamp;
+  const lastBlockTime = await getLastBlockTime();
   const nextBlockTime = lastBlockTime + time - 1;
   await hre.network.provider.send("evm_mine", [nextBlockTime]);
 }
