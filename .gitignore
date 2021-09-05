@@ -4,3 +4,7 @@
 # production
 /bin
 docs/~$lery user stories.docx
+
+# solidity unit testing
+artifacts
+cache
