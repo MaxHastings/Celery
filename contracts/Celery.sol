@@ -20,7 +20,7 @@ contract Celery is ERC20 {
         _mint(msg.sender, initialSupply); // Create initial supply
         approve(msg.sender, initialSupply); //Approves the initial supply for the sender to use
     }
-
+    
     /*** Public read functions ***/
 
     // Returns how much Celery is staked within the contract for a particular address
@@ -235,7 +235,10 @@ contract Celery is ERC20 {
         uint256 rateTime = PRBMathUD60x18.mul(interest, percentageYearStaked);
         uint256 compoundedRate = PRBMathUD60x18.pow(euler, rateTime);
         uint256 newAmount = PRBMathUD60x18.mul(currStaked, compoundedRate);
-        uint256 newAmountNorm = PRBMathUD60x18.toUint(newAmount);
+        
+        // Round New Amount Up
+        uint256 newAmountCeil = PRBMathUD60x18.ceil(newAmount);
+        uint256 newAmountNorm = PRBMathUD60x18.toUint(newAmountCeil);
 
         _accounts[msg.sender].stakedAmount = newAmountNorm;
     }
@@ -305,9 +308,12 @@ contract Celery is ERC20 {
             payoutPeriodPercentage,
             payoutAmountSnapshot
         );
+        
+        // Round max payout up
+        uint256 maxPayoutAmountCeil = PRBMathUD60x18.ceil(maxPayoutAmount);
 
         // Convert payout amount back to normal integer.
-        uint256 maxPayoutAmountNorm = PRBMathUD60x18.toUint(maxPayoutAmount);
+        uint256 maxPayoutAmountNorm = PRBMathUD60x18.toUint(maxPayoutAmountCeil);
 
         uint256 payoutAmount;
 
