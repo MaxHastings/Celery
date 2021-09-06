@@ -2,8 +2,6 @@
 // Load dependencies
 const { BigNumber } = require("@ethersproject/bignumber");
 const { expect } = require("chai");
-const hre = require("hardhat");
-
 var Celery;
 
 var TokenSale;
@@ -36,6 +34,8 @@ describe("TokenSale", function () {
     // Transfer tokens to Token Sale contract
     await Celery.transfer(TokenSale.address, scaleTokenAmount(1000));
 
+    await TokenSale.StartSale();
+
     // Test if tokens are in sale contract
     await expectAccountBalance(TokenSale.address, scaleTokenAmount(1000));
 
@@ -49,6 +49,70 @@ describe("TokenSale", function () {
 
     // Test if contract balance decreased
     await expectAccountBalance(TokenSale.address, scaleTokenAmount(0));
+
+    await TokenSale.EndSale();
+
+    //Test if ethereum was sent to owner after ending token sale.
+    await expect(
+      (await ethers.provider.getBalance(TokenSale.address)).toString()
+    ).to.equal("0");
+  });
+
+  it("Test too much value sent to Buy Tokens", async function () {
+    // Transfer tokens to Token Sale contract
+    await Celery.transfer(TokenSale.address, scaleTokenAmount(1000));
+
+    await TokenSale.StartSale();
+
+    await expect(
+      TokenSale.connect(this.buyer).BuyTokens(1000, {
+        value: 2000000,
+      })
+    ).to.be.revertedWith(
+      "Your BCH and Celery ratio amounts must match per the price"
+    );
+  });
+
+  it("Test too little value sent to Buy Tokens", async function () {
+    // Transfer tokens to Token Sale contract
+    await Celery.transfer(TokenSale.address, scaleTokenAmount(1000));
+
+    await TokenSale.StartSale();
+
+    await expect(
+      TokenSale.connect(this.buyer).BuyTokens(1000, {
+        value: 200,
+      })
+    ).to.be.revertedWith(
+      "Your BCH and Celery ratio amounts must match per the price"
+    );
+  });
+
+  it("Test buying more tokens than contract has", async function () {
+    // Transfer tokens to Token Sale contract
+    await Celery.transfer(TokenSale.address, scaleTokenAmount(1000));
+
+    await TokenSale.StartSale();
+
+    await expect(
+      TokenSale.connect(this.buyer).BuyTokens(2000, {
+        value: 2000000,
+      })
+    ).to.be.revertedWith("Token sale contract does not have enough Celery");
+  });
+
+  it("Test if not owner tries to Start Sale", async function () {
+    await expect(TokenSale.connect(this.buyer).StartSale()).to.be.revertedWith(
+      "You must be the owner"
+    );
+  });
+
+  it("Test if not owner tries to End Sale", async function () {
+    await TokenSale.StartSale();
+
+    await expect(TokenSale.connect(this.buyer).EndSale()).to.be.revertedWith(
+      "You must be the owner"
+    );
   });
 
   async function expectAccountBalance(address, amount) {

@@ -7,7 +7,7 @@ contract TokenSale {
     IERC20Metadata public TokenContract; // the token being sold
     uint256 public TokenPrice; // the price, in wei, per token
     uint256 public TokensSold = 0;
-    bool public SaleActive = true;
+    bool public SaleActive = false;
     address private _owner;
 
     constructor(IERC20Metadata tokenContract, uint256 price) {
@@ -27,7 +27,7 @@ contract TokenSale {
             (uint256(10)**TokenContract.decimals());
 
         require(
-            scaledAmount >= TokenContract.balanceOf(address(this)),
+            scaledAmount <= TokenContract.balanceOf(address(this)),
             "Token sale contract does not have enough Celery"
         );
 
