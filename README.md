@@ -1,4 +1,6 @@
-# FixedAnnuityStaking
+# Celery
+
+Celery is the first Blockchain annuity to be created. This repository contains the smart contract source code, unit tests, and other related files for Celery. Visit our website to learn more about Celery https://celery.cash
 
 Intended to be used with Visual Studio Code
 
@@ -10,8 +12,6 @@ Install Solidity VSC extension: https://marketplace.visualstudio.com/items?itemN
 To build, F5 or right click inside the open sol file -> Solidity Compile Contract (may have to select speciifc build command for node module
 
 # Running Unit Tests
-
-Try running some of the following tasks:
 
 ```shell
 npx hardhat accounts
