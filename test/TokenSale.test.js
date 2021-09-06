@@ -50,6 +50,11 @@ describe("TokenSale", function () {
     // Test if contract balance decreased
     await expectAccountBalance(TokenSale.address, scaleTokenAmount(0));
 
+    // Test if contract received Ethereum
+    await expect(
+      (await ethers.provider.getBalance(TokenSale.address)).toString()
+    ).to.equal("1000000");
+
     await TokenSale.EndSale();
 
     //Test if ethereum was sent to owner after ending token sale.
