@@ -121,10 +121,18 @@ contract Celery is ERC20 {
     Collect entire staked amount with 50% penalty
     Returns the amount that was sent from the contract back to your account
     */
-    function CollectAll() public {
+    function CollectAll(uint256 amountToCollect) public {
         StartPayout();
-        _processNormalPayoutToAccount();
-        _processFullPayoutToAccount();
+        uint256 normalPayoutAmount = _processNormalPayoutToAccount();
+
+        // If normal payout amount is greater than or equal to what user wants to collect then return early.
+        if (normalPayoutAmount >= amountToCollect) {
+            return;
+        }
+
+        uint256 penalizedAmountToCollect = amountToCollect - normalPayoutAmount;
+        
+        _processFullPayoutToAccount(penalizedAmountToCollect);
     }
     /*** ***/
 
@@ -201,8 +209,10 @@ contract Celery is ERC20 {
         b) Max Payout Amount = Payout Percentage * Staked Amount snapshot
     3) Send either Max Payout Amount or Current Staked Amount whichever is smaller to the Account address.
     4) Update Account last calculation time and subtract payout amount from account staked amount.
+
+    Returns token amount paid to account owner. Default is 0
     */
-    function _processNormalPayoutToAccount() private {
+    function _processNormalPayoutToAccount() private returns(uint256) {
         // Get the latest block timestamp.
         uint256 timeStamp = block.timestamp;
 
@@ -217,7 +227,7 @@ contract Celery is ERC20 {
 
         // If Time passed is zero or Current Staked Amount is zero, end payout process early.
         if (timePassedInSecondsNorm == 0 || currStakedNorm == 0) {
-            return;
+            return 0;
         }
 
         // Get Account Payout Snapshot Amount.
@@ -259,7 +269,7 @@ contract Celery is ERC20 {
         // Convert payout amount back to normal integer.
         uint256 maxPayoutAmountNorm = PRBMathUD60x18.toUint(maxPayoutAmountCeil);
 
-        uint256 payoutAmount;
+        uint256 payoutAmount = 0;
 
         // Check if Current Staked Amount is smaller than Max Payout
         if (currStakedNorm < maxPayoutAmountNorm) {
@@ -278,24 +288,34 @@ contract Celery is ERC20 {
 
         // Notify how much an account collected in payment
         emit CollectPayoutEvent(msg.sender, payoutAmount);
+
+        return payoutAmount;
     }
 
     /*
     Private Function
     Processes the full payout (with penalty) back to the account address.
     */
-    function _processFullPayoutToAccount() private {
-        // Apply 50% penalty to staked amount
-        uint256 payoutAmount = _getAmount() / 2;
+    function _processFullPayoutToAccount(uint256 amount) private {
 
-        // Set staked amount to 0
-        _setAmount(0);
+        // Get staked amount
+        uint256 stakedAmount = _getAmount();
+
+        // Check if collecting more than staked account balancee
+        require(amount <= stakedAmount, "Collect payout is larger than staked amount");
+
+        // Subtract amount collected from staked balance
+        _setAmount(stakedAmount - amount);
+        // Update last time processsed account
         _updateProcessedTime();
+
+        // Apply 50% penalty to staked amount
+        uint256 payoutAmount = amount / 2;
 
         // Send tokens to account address.
         _payoutAmountToAccount(payoutAmount);
         
-        // Notify that an account collected entire payout with penalty
+        // Notify that an account collected payout with penalty
         emit CollectAllEvent(msg.sender, payoutAmount);
     }
 
