@@ -310,14 +310,14 @@ contract Celery is ERC20 {
         // Update last time processsed account
         _updateProcessedTime();
 
-        // Apply 50% penalty to staked amount
+        // Apply 50% penalty to payout amount
         uint256 payoutAmount = amount / 2;
 
         // Send tokens to account address.
         _payoutAmountToAccount(payoutAmount);
         
-        // Notify that an account collected payout with penalty
-        emit CollectAllEvent(msg.sender, payoutAmount);
+        // Notify that an account forced payout
+        emit ForcedPayoutEvent(msg.sender, payoutAmount);
     }
 
     /*
@@ -340,8 +340,8 @@ contract Celery is ERC20 {
     }
 
     /*** Events ***/
-    // Event that an account collected its entire payout with penalty
-    event CollectAllEvent(
+    // Event that an account forced payout with a penalty
+    event ForcedPayoutEvent(
         address _address,
         uint _amount
     );
