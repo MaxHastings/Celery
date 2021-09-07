@@ -36,8 +36,8 @@ describe("Celery", function () {
   });
 
   // Test case
-  it("Test if Collect All reverts when collecting more than staked balance", async function () {
-    await expect(Celery.CollectAll(100)).to.be.revertedWith(
+  it("Test if Force Payout reverts when collecting more than staked balance", async function () {
+    await expect(Celery.ForcePayout(100)).to.be.revertedWith(
       "Collect payout is larger than staked amount"
     );
   });
@@ -170,8 +170,8 @@ describe("Celery", function () {
     // Wait half a year
     await increaseBlockTime(15768000);
 
-    // Collect entire payout
-    await Celery.CollectAll(200000000);
+    // Collect a force payout for entire staked payout
+    await Celery.ForcePayout(200000000);
 
     // Test if account balance received 75% of staked tokens. Half of tokens penalized by 50% and half not penalized
     await expectAccountBalance(this.owner.address, 150000000);
