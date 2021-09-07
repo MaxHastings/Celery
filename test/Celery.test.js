@@ -8,6 +8,8 @@ var Celery;
 
 const initialSupply = 100000000;
 
+const YEAR_IN_SECONDS = 31536000;
+
 // Start test Celery
 describe("Celery", function () {
   before(async function () {
@@ -226,6 +228,68 @@ describe("Celery", function () {
 
     // Test if account balance still has same number of tokens
     await expectAccountBalance(this.owner.address, 100000000);
+  });
+
+  // Test case staking event
+  it("Test Staking event is emitted", async function () {
+    await expect(Celery.IncreaseStake(1000))
+      .to.emit(Celery, "IncreaseStakeEvent")
+      .withArgs(this.owner.address, 1000);
+  });
+
+  // Test case collect event
+  it("Test Collect event is emitted", async function () {
+    await StakeAmountForTime.bind(this)(1000, YEAR_IN_SECONDS);
+
+    await increaseBlockTime(YEAR_IN_SECONDS);
+
+    await expect(Celery.CollectPayout())
+      .to.emit(Celery, "CollectPayoutEvent")
+      .withArgs(this.owner.address, 2000);
+  });
+
+  // Test case force payout event
+  it("Test Force Payout event is emitted", async function () {
+    await StakeAmountForTime.bind(this)(1000, YEAR_IN_SECONDS);
+
+    // Wait half year
+    await increaseBlockTime(YEAR_IN_SECONDS / 2);
+
+    await expect(Celery.ForcePayout(2000))
+      .to.emit(Celery, "ForcePayoutEvent")
+      .withArgs(this.owner.address, 500);
+  });
+
+  // Test case account status event
+  it("Test Account Status event is emitted on Increase Stake", async function () {
+    await expect(Celery.IncreaseStake(1000))
+      .to.emit(Celery, "AccountStatusEvent")
+      .withArgs(this.owner.address, 1);
+  });
+
+  // Test case account status event
+  it("Test Account Status event is emitted on Start Stake", async function () {
+    await expect(Celery.StartStake())
+      .to.emit(Celery, "AccountStatusEvent")
+      .withArgs(this.owner.address, 1);
+  });
+
+  // Test case account status event
+  it("Test Account Status event is emitted on Force Payout", async function () {
+    await Celery.IncreaseStake(1000);
+
+    await expect(Celery.ForcePayout(1000))
+      .to.emit(Celery, "AccountStatusEvent")
+      .withArgs(this.owner.address, 0);
+  });
+
+  // Test case account status event
+  it("Test Account Status event is emitted on Start Payout", async function () {
+    await Celery.IncreaseStake(1000);
+
+    await expect(Celery.StartPayout())
+      .to.emit(Celery, "AccountStatusEvent")
+      .withArgs(this.owner.address, 0);
   });
 });
 
