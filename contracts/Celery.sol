@@ -21,6 +21,9 @@ contract Celery is ERC20 {
     // Create key-value pair, key = address, value = Account struct
     mapping(address => Account) private _accounts;
 
+    // 1 year is equal to in seconds. 60 sec * 60 min * 24 hr * 365 days = 31536000 seconds in a year.
+    uint256 SECONDS_PER_YEAR = 31536000;
+
     // Contract creation
     constructor(uint256 initialSupply) ERC20("Celery", "CLY") {
         _mint(msg.sender, initialSupply); // Create initial supply
@@ -165,6 +168,7 @@ contract Celery is ERC20 {
             _accounts[msg.sender].lastProcessedTime;
         uint256 currStakedNorm = _getAmount();
 
+        // Update last processed account
         _updateProcessedTime();
 
         // If Time passed is zero or Current Staked Amount is zero, end payout process early.
@@ -180,21 +184,27 @@ contract Celery is ERC20 {
         uint256 interest = 693147180559945309;
         // Euler's number represented as 60.18-decimal fixed-point number
         uint256 euler = 2718281828459045235;
-        uint256 secondsPerYear = 31536000;
+        // Calculate the percentage of the year staked. Ex. half year = 50% = 0.5
         uint256 percentageYearStaked = PRBMathUD60x18.div(
             secondsStaked,
-            PRBMathUD60x18.fromUint(secondsPerYear)
+            PRBMathUD60x18.fromUint(SECONDS_PER_YEAR)
         );
         uint256 currStaked = PRBMathUD60x18.fromUint(currStakedNorm);
 
+        // Multiply interest rate by time staked
         uint256 rateTime = PRBMathUD60x18.mul(interest, percentageYearStaked);
+
+        // Continuously compound the interest with euler's constant
         uint256 compoundedRate = PRBMathUD60x18.pow(euler, rateTime);
+
+        // Multiple compounded rate with staked amount
         uint256 newAmount = PRBMathUD60x18.mul(currStaked, compoundedRate);
         
-        // Round New Amount Up
+        // Round up for consistency
         uint256 newAmountCeil = PRBMathUD60x18.ceil(newAmount);
         uint256 newAmountNorm = PRBMathUD60x18.toUint(newAmountCeil);
 
+        // Set new staked amount 
         _setAmount(newAmountNorm);
     }
 
@@ -239,8 +249,7 @@ contract Celery is ERC20 {
             payoutAmountSnapshotNorm
         );
 
-        // 1 year payout period in seconds. 60 * 60 * 24 * 365 = 31536000 seconds in a year.
-        uint256 payoutPeriodInSecondsNorm = 31536000;
+        uint256 payoutPeriodInSecondsNorm = SECONDS_PER_YEAR;
 
         // Convert Payout Period into Fixed Point Decimal.
         uint256 payoutPeriodInSeconds = PRBMathUD60x18.fromUint(
@@ -317,7 +326,7 @@ contract Celery is ERC20 {
         _payoutAmountToAccount(payoutAmount);
         
         // Notify that an account forced payout
-        emit ForcedPayoutEvent(msg.sender, payoutAmount);
+        emit ForcePayoutEvent(msg.sender, payoutAmount);
     }
 
     /*
@@ -341,21 +350,21 @@ contract Celery is ERC20 {
 
     /*** Events ***/
     // Event that an account forced payout with a penalty
-    event ForcedPayoutEvent(
+    event ForcePayoutEvent(
         address _address,
-        uint _amount
+        uint256 _amount
     );
         
     // Event that an account collected payout
     event CollectPayoutEvent(
         address _address,
-        uint _amount
+        uint256 _amount
     );
     
     // Event that an account increased its staked amount
     event IncreaseStakeEvent(
         address _address,
-        uint _amount
+        uint256 _amount
     );
     
     // Event that an account status has been changed.
