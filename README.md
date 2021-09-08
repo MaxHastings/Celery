@@ -11,28 +11,33 @@ Intended to be used with Visual Studio Code
 Install NPM/Yarn
 run: npm install
 
+Install solhint globally: npm install -g solhint
 Install Solidity VSC extension: https://marketplace.visualstudio.com/items?itemName=JuanBlanco.solidity
 
-To build, F5 or right click inside the open sol file -> Solidity Compile Contract (may have to select speciifc build command for node module
-
 ## Usage
+
+Run linting (automatically ran with below commands as well)
+
+```shell
+npm run lint
+```
 
 Compile contracts
 
 ```shell
-npx hardhat compile
+npm run build
 ```
 
 Run Unit Tests
 
 ```shell
-npx hardhat compile
+npm run test
 ```
 
 Run Unit Test code coverage
 
 ```shell
-npx hardhat coverage
+npm run coverage
 ```
 
 ## Contributing

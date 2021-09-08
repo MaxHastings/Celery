@@ -2,6 +2,7 @@
 // Load dependencies
 const { expect } = require("chai");
 const hre = require("hardhat");
+/* global describe,before,beforeEach,it,ethers */
 
 var Celery;
 
