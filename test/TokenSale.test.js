@@ -32,16 +32,16 @@ describe("TokenSale", function () {
 
     // Test case
     it("Test Buy Tokens", async function () {
-        // Transfer tokens to Token Sale contract
+    // Transfer tokens to Token Sale contract
         await Celery.transfer(TokenSale.address, scaleTokenAmount(1000));
 
-        await TokenSale.StartSale();
+        await TokenSale.startSale();
 
         // Test if tokens are in sale contract
         await expectAccountBalance(TokenSale.address, scaleTokenAmount(1000));
 
         // Have a buyer buy tokens
-        await TokenSale.connect(this.buyer).BuyTokens(1000, {
+        await TokenSale.connect(this.buyer).buyTokens(1000, {
             value: 1000000,
         });
 
@@ -56,7 +56,7 @@ describe("TokenSale", function () {
             (await ethers.provider.getBalance(TokenSale.address)).toString()
         ).to.equal("1000000");
 
-        await TokenSale.EndSale();
+        await TokenSale.endSale();
 
         //Test if ethereum was sent to owner after ending token sale.
         await expect(
@@ -65,58 +65,54 @@ describe("TokenSale", function () {
     });
 
     it("Test too much value sent to Buy Tokens", async function () {
-        // Transfer tokens to Token Sale contract
+    // Transfer tokens to Token Sale contract
         await Celery.transfer(TokenSale.address, scaleTokenAmount(1000));
 
-        await TokenSale.StartSale();
+        await TokenSale.startSale();
 
         await expect(
-            TokenSale.connect(this.buyer).BuyTokens(1000, {
+            TokenSale.connect(this.buyer).buyTokens(1000, {
                 value: 2000000,
             })
-        ).to.be.revertedWith(
-            "Your BCH and Celery ratio amounts must match per the price"
-        );
+        ).to.be.revertedWith("Incorrect token value ratio");
     });
 
     it("Test too little value sent to Buy Tokens", async function () {
-        // Transfer tokens to Token Sale contract
+    // Transfer tokens to Token Sale contract
         await Celery.transfer(TokenSale.address, scaleTokenAmount(1000));
 
-        await TokenSale.StartSale();
+        await TokenSale.startSale();
 
         await expect(
-            TokenSale.connect(this.buyer).BuyTokens(1000, {
+            TokenSale.connect(this.buyer).buyTokens(1000, {
                 value: 200,
             })
-        ).to.be.revertedWith(
-            "Your BCH and Celery ratio amounts must match per the price"
-        );
+        ).to.be.revertedWith("Incorrect token value ratio");
     });
 
     it("Test buying more tokens than contract has", async function () {
-        // Transfer tokens to Token Sale contract
+    // Transfer tokens to Token Sale contract
         await Celery.transfer(TokenSale.address, scaleTokenAmount(1000));
 
-        await TokenSale.StartSale();
+        await TokenSale.startSale();
 
         await expect(
-            TokenSale.connect(this.buyer).BuyTokens(2000, {
+            TokenSale.connect(this.buyer).buyTokens(2000, {
                 value: 2000000,
             })
-        ).to.be.revertedWith("Token sale contract does not have enough Celery");
+        ).to.be.revertedWith("Out of tokens");
     });
 
     it("Test if not owner tries to Start Sale", async function () {
-        await expect(TokenSale.connect(this.buyer).StartSale()).to.be.revertedWith(
+        await expect(TokenSale.connect(this.buyer).startSale()).to.be.revertedWith(
             "You must be the owner"
         );
     });
 
     it("Test if not owner tries to End Sale", async function () {
-        await TokenSale.StartSale();
+        await TokenSale.startSale();
 
-        await expect(TokenSale.connect(this.buyer).EndSale()).to.be.revertedWith(
+        await expect(TokenSale.connect(this.buyer).endSale()).to.be.revertedWith(
             "You must be the owner"
         );
     });
