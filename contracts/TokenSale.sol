@@ -4,73 +4,69 @@ pragma solidity 0.8.7;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract TokenSale {
-    IERC20Metadata public TokenContract; // the token being sold
-    uint256 public TokenPrice; // the price, in wei, per token
-    uint256 public TokensSold = 0;
-    bool public SaleActive = false;
-    address private _owner;
+  IERC20Metadata public tokenContract; // the token being sold
+  uint256 public tokenPrice; // the price, in wei, per token
+  uint256 public tokensSold = 0;
+  bool public saleActive = false;
+  address private _owner;
 
-    constructor(IERC20Metadata tokenContract, uint256 price) {
-        _owner = msg.sender;
-        TokenContract = tokenContract;
-        TokenPrice = price;
-    }
+  constructor(IERC20Metadata _contract, uint256 price) {
+    _owner = msg.sender;
+    tokenContract = _contract;
+    tokenPrice = price;
+  }
 
-    /// @notice Buy tokens from the contract
-    /// @param amount number of tokens to purchase
-    function BuyTokens(uint256 amount) public payable {
-        require(SaleActive, "The Celery token sale has ended");
-        require(
-            msg.value == (amount * TokenPrice),
-            "Your BCH and Celery ratio amounts must match per the price"
-        );
+  /// @notice Buy tokens from the contract
+  /// @param amount number of tokens to purchase
+  function buyTokens(uint256 amount) public payable {
+    require(saleActive, "Sale has ended");
+    require(msg.value == (amount * tokenPrice), "Incorrect token value ratio");
 
-        uint256 scaledAmount = amount * (uint256(10)**TokenContract.decimals());
+    uint256 scaledAmount = amount * (uint256(10)**tokenContract.decimals());
 
-        require(
-            scaledAmount <= TokenContract.balanceOf(address(this)),
-            "Token sale contract does not have enough Celery"
-        );
+    require(
+      scaledAmount <= tokenContract.balanceOf(address(this)),
+      "Out of tokens"
+    );
 
-        TokensSold += amount;
-        require(TokenContract.transfer(msg.sender, scaledAmount));
+    tokensSold += amount;
+    require(
+      tokenContract.transfer(msg.sender, scaledAmount),
+      "Failed to transfer token"
+    );
 
-        emit SoldEvent(msg.sender, amount);
-    }
+    emit SoldEvent(msg.sender, amount);
+  }
 
-    /// @notice For owner to start sale.
-    function StartSale() public {
-        _ownerCheck();
-        SaleActive = true;
-        emit StartSaleEvent();
-    }
+  /// @notice For owner to start sale.
+  function startSale() public {
+    _ownerCheck();
+    saleActive = true;
+    emit StartSaleEvent();
+  }
 
-    /// @notice For owner to end sale and collect proceeds.
-    function EndSale() public {
-        _ownerCheck();
+  /// @notice For owner to end sale and collect proceeds.
+  function endSale() public {
+    _ownerCheck();
+    saleActive = false;
+    emit EndSaleEvent();
+    // Send unsold tokens to the owner.
+    require(
+      tokenContract.transfer(_owner, tokenContract.balanceOf(address(this))),
+      "Failed to transfer token"
+    );
 
-        // Send unsold tokens to the owner.
-        require(
-            TokenContract.transfer(
-                _owner,
-                TokenContract.balanceOf(address(this))
-            )
-        );
+    // Transfer currency to the owner.
+    payable(msg.sender).transfer(address(this).balance);
+  }
 
-        // Transfer currency to the owner.
-        payable(msg.sender).transfer(address(this).balance);
+  function _ownerCheck() private view {
+    require(msg.sender == _owner, "You must be the owner");
+  }
 
-        SaleActive = false;
-        emit EndSaleEvent();
-    }
-
-    function _ownerCheck() private view {
-        require(msg.sender == _owner, "You must be the owner");
-    }
-
-    /*** Events ***/
-    event SoldEvent(address buyer, uint256 amount);
-    event StartSaleEvent();
-    event EndSaleEvent();
-    /*** ***/
+  /*** Events ***/
+  event SoldEvent(address buyer, uint256 amount);
+  event StartSaleEvent();
+  event EndSaleEvent();
+  /*** ***/
 }
