@@ -82,9 +82,9 @@ contract Celery is ERC20 {
         _setAccountToStake();
     }
 
-    /// @notice Transfer additional tokens to account balance.
+    /// @notice Transfer additional tokens to account balance and start staking.
     /// @param amount number of tokens to add to Account balance.
-    function IncreaseBalance(uint256 amount) public {
+    function IncreaseBalanceAndStake(uint256 amount) public {
         // Check if amount is greater than zero.
         require(amount > 0, "Value must be greater than zero.");
 
@@ -101,7 +101,7 @@ contract Celery is ERC20 {
         _accounts[msg.sender].amount += amount;
         
         // Notify that the account increased its token balance.
-        emit IncreaseBalanceEvent(msg.sender, amount);
+        emit IncreaseBalanceAndStakeEvent(msg.sender, amount);
     }
 
     /// @notice Switches Account status to start payout.
@@ -385,7 +385,7 @@ contract Celery is ERC20 {
     );
     
     // Event that an account increased its balance
-    event IncreaseBalanceEvent(
+    event IncreaseBalanceAndStakeEvent(
         address _address,
         uint256 _amount
     );
