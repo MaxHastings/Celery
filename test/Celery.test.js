@@ -1,12 +1,11 @@
 // test/Celery.test.js
 // Load dependencies
-const { BigNumber } = require("@ethersproject/bignumber");
 const { expect } = require("chai");
 const hre = require("hardhat");
 
 var Celery;
 
-const YEAR_IN_SECONDS = 31536000;
+const SECONDS_IN_A_YEAR = 31536000;
 
 describe("Test Celery reverts", function () {
   var initialSupply = 1000;
@@ -138,7 +137,7 @@ describe("Test Celery staking", function () {
   it("Test if staking amount doubles in a year", async function () {
     await Celery.IncreaseBalanceAndStake(initialSupply);
 
-    await increaseBlockTime(YEAR_IN_SECONDS);
+    await increaseBlockTime(SECONDS_IN_A_YEAR);
 
     await Celery.StartPayout();
 
@@ -153,14 +152,14 @@ describe("Test Celery staking", function () {
   it("Test if contract gives back no more than entire staked amount%", async function () {
     await Celery.IncreaseBalanceAndStake(initialSupply);
 
-    var stakeLength = YEAR_IN_SECONDS * 10;
+    var stakeLength = SECONDS_IN_A_YEAR * 10;
     // Wait 10 years
     await increaseBlockTime(stakeLength);
 
     await Celery.StartPayout();
 
     // Wait 10 years
-    await increaseBlockTime(YEAR_IN_SECONDS * 10);
+    await increaseBlockTime(SECONDS_IN_A_YEAR * 10);
 
     await Celery.CollectPayout();
     // Test if owner token balance received all staked tokens
@@ -202,13 +201,13 @@ describe("Test Celery staking", function () {
   it("Test if contract mints tokens on payout", async function () {
     await Celery.IncreaseBalanceAndStake(initialSupply);
 
-    var stakedLength = YEAR_IN_SECONDS * 10;
+    var stakedLength = SECONDS_IN_A_YEAR * 10;
     // Wait 10 years in block time
     await increaseBlockTime(stakedLength);
 
     await Celery.StartPayout();
 
-    await increaseBlockTime(YEAR_IN_SECONDS);
+    await increaseBlockTime(SECONDS_IN_A_YEAR);
 
     // Collect Payout
     await Celery.CollectPayout();
@@ -237,7 +236,7 @@ describe("Test Celery payouts", function () {
 
     await Celery.IncreaseBalanceAndStake(500);
 
-    await increaseBlockTime(YEAR_IN_SECONDS);
+    await increaseBlockTime(SECONDS_IN_A_YEAR);
 
     await Celery.StartPayout();
 
@@ -251,7 +250,7 @@ describe("Test Celery payouts", function () {
   // Test case
   it("Test if payout is half amount in a year", async function () {
     // Wait half year in block time
-    await increaseBlockTime(YEAR_IN_SECONDS / 2);
+    await increaseBlockTime(SECONDS_IN_A_YEAR / 2);
 
     // Collect Payout for half year
     await Celery.CollectPayout();
@@ -266,7 +265,7 @@ describe("Test Celery payouts", function () {
   // Test case
   it("Test if contract penalizes immediate payout by 50%", async function () {
     // Wait half a year
-    await increaseBlockTime(YEAR_IN_SECONDS / 2);
+    await increaseBlockTime(SECONDS_IN_A_YEAR / 2);
 
     // Collect a force payout for entire staked payout
     await Celery.ForcePayout(initialSupply);
@@ -283,7 +282,7 @@ describe("Test Celery payouts", function () {
 
   // Test case collect event
   it("Test Collect event is emitted", async function () {
-    await increaseBlockTime(YEAR_IN_SECONDS);
+    await increaseBlockTime(SECONDS_IN_A_YEAR);
 
     await expect(Celery.CollectPayout())
       .to.emit(Celery, "CollectPayoutEvent")
@@ -293,7 +292,7 @@ describe("Test Celery payouts", function () {
   // Test case force payout event
   it("Test Force Payout event is emitted", async function () {
     // Wait half year
-    await increaseBlockTime(YEAR_IN_SECONDS / 2);
+    await increaseBlockTime(SECONDS_IN_A_YEAR / 2);
 
     await expect(Celery.ForcePayout(1000))
       .to.emit(Celery, "ForcePayoutEvent")
@@ -329,7 +328,7 @@ describe("Test Celery payouts", function () {
 
   // Test case
   it("Test if Force Payout has no penalty if payout period is over", async function () {
-    await increaseBlockTime(YEAR_IN_SECONDS);
+    await increaseBlockTime(SECONDS_IN_A_YEAR);
 
     await Celery.ForcePayout(1000);
 
