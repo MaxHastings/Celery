@@ -18,7 +18,7 @@
         "solidity-coverage": "^0.7.17"
     },
     "scripts": {
-        "test": "npx hardhat accounts && npx hardhat compile && npx hardhat clean && npx hardhat coverage"
+        "test": "npx hardhat coverage"
     },
     "repository": {
         "type": "git",
