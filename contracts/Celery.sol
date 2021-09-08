@@ -12,7 +12,7 @@ struct Account {
     // Remember the last staking balance when Account switches to payout. Used for calculating payout amount.
     uint256 lastStakingBalance;
     // The status of the account
-    uint status; //0 = Payout, 1 = Staking
+    uint8 status; //0 = Payout, 1 = Staking
 }
 
 /// @title An Annuity like Smart Contract called Celery
@@ -23,7 +23,11 @@ contract Celery is ERC20 {
     mapping(address => Account) private _accounts;
 
     // 1 year is equal to in seconds. 60 sec * 60 min * 24 hr * 365 days = 31536000 seconds in a year.
-    uint256 SECONDS_PER_YEAR = 31536000;
+    uint256 constant SECONDS_PER_YEAR = 31536000;
+
+    // Statuses
+    uint8 constant STAKE_STATUS = 1;
+    uint8 constant PAYOUT_STATUS = 0;
 
     // Contract creation
     constructor(uint256 initialSupply) ERC20("Celery", "CLY") {
@@ -70,16 +74,10 @@ contract Celery is ERC20 {
     /// @notice Switches Account status to start staking.
     /// @dev Check if already staking and if not, process an account payout then switch to staking.
     function StartStake() public {
-        // Check if Account is already staking, return if true
-        if (_isAccountInStake()) {
-            return;
-        }
+        // Check if Account is already staking
+        require(!_isAccountInStake(), "Account already in stake status.");
 
-        // Process an account payout before switching account to staking.
-        _processNormalPayoutToAccount();
-
-        // Set Account to start staking.
-        _setAccountToStake();
+        _startStake();
     }
 
     /// @notice Transfer additional tokens to account balance and start staking.
@@ -89,7 +87,7 @@ contract Celery is ERC20 {
         require(amount > 0, "Value must be greater than zero.");
 
         // Start staking if not already.
-        StartStake();
+        _startStake();
 
         // Calculate interest on the current staked amount before adding additional tokens.
         _calculateStakedAmount();
@@ -106,28 +104,17 @@ contract Celery is ERC20 {
 
     /// @notice Switches Account status to start payout.
     function StartPayout() public {
-        // Check if Account is already in payout, return if true
-        if (_isAccountInPayout()) {
-            return;
-        }
+        // Check if Account is already in payout
+        require(!_isAccountInPayout(), "Account already in payout status.");
 
-        // Calculate interest on the current staked amount before switching account to payout.
-        _calculateStakedAmount();
-
-        // Set Account to start payout.
-        _setAccountToPayout();
-
-        uint256 currStakedNorm = _getAmount();
-        // Remember last staking balance. Used later for calculating payout amount.
-        _accounts[msg.sender].lastStakingBalance = currStakedNorm;
+        _startPayout();
     }
-
 
     /// @notice Receive the tokens that are available for payout.
     function CollectPayout() public {
 
         // Start payout if not already
-        StartPayout();
+        _startPayout();
 
         // Process an account payout
         _processNormalPayoutToAccount();
@@ -138,7 +125,7 @@ contract Celery is ERC20 {
     function ForcePayout(uint256 amount) public {
 
         // Start payout if not already
-        StartPayout();
+        _startPayout();
 
         // Process an account payout
         uint256 normalPayoutAmount = _processNormalPayoutToAccount();
@@ -156,6 +143,35 @@ contract Celery is ERC20 {
     }
 
     /*** ***/
+
+    function _startStake() private {
+        if (_isAccountInStake()) {
+            return;
+        }
+        
+        // Process an account payout before switching account to staking.
+        _processNormalPayoutToAccount();
+
+        // Set Account to start staking.
+        _setAccountToStake();
+    }
+
+    function _startPayout() private {
+        // Check if Account is already in payout, return if true
+        if (_isAccountInPayout()) {
+            return;
+        }
+
+        // Calculate interest on the current staked amount before switching account to payout.
+        _calculateStakedAmount();
+
+        // Set Account to start payout.
+        _setAccountToPayout();
+
+        uint256 currStakedNorm = _getAmount();
+        // Remember last staking balance. Used later for calculating payout amount.
+        _accounts[msg.sender].lastStakingBalance = currStakedNorm;
+    }
 
     /*
     Private Function
@@ -402,14 +418,14 @@ contract Celery is ERC20 {
     }
 
     function _isAccountInPayout() private view returns (bool) {
-        return _getStatus() == 0;
+        return _getStatus() == PAYOUT_STATUS;
     }
 
     function _isAccountInStake() private view returns (bool) {
-        return _getStatus() == 1;
+        return _getStatus() == STAKE_STATUS;
     }
 
-    function _getStatus() private view returns (uint) {
+    function _getStatus() private view returns (uint8) {
         return _accounts[msg.sender].status;
     }
 
@@ -418,18 +434,18 @@ contract Celery is ERC20 {
     }
     
     function _setAccountToPayout() private {
-        _setStatus(0);
+        _setStatus(PAYOUT_STATUS);
         // Notify that account status is now paying out
         emit AccountStatusEvent(msg.sender, 0);
     }
 
     function _setAccountToStake() private {
-        _setStatus(1);
+        _setStatus(STAKE_STATUS);
         // Notify that account status is now staking
         emit AccountStatusEvent(msg.sender, 1);
     }
 
-    function _setStatus(uint status) private {
+    function _setStatus(uint8 status) private {
         _accounts[msg.sender].status = status;
     }
 
