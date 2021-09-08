@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: GNU General Public License v3.0
+//SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -23,7 +23,7 @@ contract Celery is ERC20 {
     mapping(address => Account) private _accounts;
 
     // 1 year is equal to in seconds. 60 sec * 60 min * 24 hr * 365 days = 31536000 seconds in a year.
-    uint256 SECONDS_PER_YEAR = 31536000;
+    uint256 constant SECONDS_PER_YEAR = 31536000;
 
     // Contract creation
     constructor(uint256 initialSupply) ERC20("Celery", "CLY") {

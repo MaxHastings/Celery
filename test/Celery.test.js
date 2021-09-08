@@ -111,7 +111,7 @@ describe("Test Celery staking", function () {
     await expectAccountAmount(this.owner.address, increaseStakeAmount);
 
     for (var i = 1; i < increments; i++) {
-      const increaseTime = (1 / increments) * 31536000;
+      const increaseTime = (1 / increments) * SECONDS_IN_A_YEAR;
       await increaseBlockTime(increaseTime);
       await Celery.IncreaseBalanceAndStake(increaseStakeAmount);
 
@@ -263,14 +263,14 @@ describe("Test Celery payouts", function () {
   });
 
   // Test case
-  it("Test if contract penalizes immediate payout by 50%", async function () {
+  it("Test if contract penalizes force payout by 50%", async function () {
     // Wait half a year
     await increaseBlockTime(SECONDS_IN_A_YEAR / 2);
 
     // Collect a force payout for entire staked payout
     await Celery.ForcePayout(initialSupply);
 
-    // Test if ownre token balance received 75% of staked tokens. Half of tokens penalized by 50% and half not penalized
+    // Test if owner token balance received 75% of staked tokens. Half of tokens penalized by 50% and half not penalized
     await expectTokenBalance(this.owner.address, initialSupply * 0.75);
 
     // Test if account staked balance is set back to 0
@@ -278,6 +278,18 @@ describe("Test Celery payouts", function () {
 
     // Test if contract token balance is subtracted
     await expectTokenBalance(Celery.address, 0);
+  });
+
+  // Test case
+  it("Test force payout of entire staked balance", async function () {
+    // Collect a force payout for entire staked payout
+    await Celery.ForcePayout(initialSupply);
+
+    // Half of tokens penalized by 50%
+    await expectTokenBalance(this.owner.address, initialSupply / 2);
+
+    // Test if account staked balance is set back to 0
+    await expectAccountAmount(this.owner.address, 0);
   });
 
   // Test case collect event
@@ -304,7 +316,7 @@ describe("Test Celery payouts", function () {
     var stakedAmount = 1000;
     var increments = 10;
     for (var i = 1; i <= increments; i++) {
-      await increaseBlockTime((1 / increments) * 31536000);
+      await increaseBlockTime((1 / increments) * SECONDS_IN_A_YEAR);
       await Celery.CollectPayout();
 
       // Calculate amount paid out
@@ -339,8 +351,7 @@ describe("Test Celery payouts", function () {
 // *** Helper Functions *** //
 
 function calculateStake(amount, stakedTime) {
-  const secondsInAYear = 31536000;
-  const percTime = stakedTime / secondsInAYear;
+  const percTime = stakedTime / SECONDS_IN_A_YEAR;
   return Math.ceil(amount * Math.pow(Math.E, percTime * Math.LN2));
 }
 
