@@ -79,14 +79,14 @@ describe("Celery", function () {
   it("Test increase stake 10 times in one year", async function () {
     var increments = 10;
     var increaseStakeAmount = initialSupply / increments;
-    await Celery.IncreaseBalance(increaseStakeAmount);
+    await Celery.IncreaseBalanceAndStake(increaseStakeAmount);
     var stakedAmount = increaseStakeAmount;
     await expectAccountAmount(this.owner.address, increaseStakeAmount);
 
     for (var i = 1; i < increments; i++) {
       const increaseTime = (1 / increments) * 31536000;
       await increaseBlockTime(increaseTime);
-      await Celery.IncreaseBalance(increaseStakeAmount);
+      await Celery.IncreaseBalanceAndStake(increaseStakeAmount);
 
       // Calculate new staked amouont
       stakedAmount =
@@ -231,9 +231,9 @@ describe("Celery", function () {
   });
 
   // Test case staking event
-  it("Test Staking event is emitted", async function () {
-    await expect(Celery.IncreaseBalance(1000))
-      .to.emit(Celery, "IncreaseBalanceEvent")
+  it("Test increase balance and stake event is emitted", async function () {
+    await expect(Celery.IncreaseBalanceAndStake(1000))
+      .to.emit(Celery, "IncreaseBalanceAndStakeEvent")
       .withArgs(this.owner.address, 1000);
   });
 
@@ -262,7 +262,7 @@ describe("Celery", function () {
 
   // Test case account status event
   it("Test Account Status event is emitted on Increase Stake", async function () {
-    await expect(Celery.IncreaseBalance(1000))
+    await expect(Celery.IncreaseBalanceAndStake(1000))
       .to.emit(Celery, "AccountStatusEvent")
       .withArgs(this.owner.address, 1);
   });
@@ -276,7 +276,7 @@ describe("Celery", function () {
 
   // Test case account status event
   it("Test Account Status event is emitted on Force Payout", async function () {
-    await Celery.IncreaseBalance(1000);
+    await Celery.IncreaseBalanceAndStake(1000);
 
     await expect(Celery.ForcePayout(1000))
       .to.emit(Celery, "AccountStatusEvent")
@@ -285,7 +285,7 @@ describe("Celery", function () {
 
   // Test case account status event
   it("Test Account Status event is emitted on Start Payout", async function () {
-    await Celery.IncreaseBalance(1000);
+    await Celery.IncreaseBalanceAndStake(1000);
 
     await expect(Celery.StartPayout())
       .to.emit(Celery, "AccountStatusEvent")
@@ -298,7 +298,7 @@ describe("Celery", function () {
 // Helper function for account staking of time length
 async function StakeAmountForTime(amount, time) {
   // Increase Stake
-  await Celery.IncreaseBalance(amount);
+  await Celery.IncreaseBalanceAndStake(amount);
 
   const timeStaked = await Celery.getLastProcessedTime(this.owner.address);
 

@@ -35,7 +35,7 @@ Run Unit Test code coverage
 npx hardhat compile
 ```
 
-### Contributing
+## Contributing
 
 To learn how to contribute to the project please contact @MaxHastings on Telegrarm. Find him on the official Celery Telegram group https://t.me/celeryToken
 
