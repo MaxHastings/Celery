@@ -23,11 +23,11 @@ contract Celery is ERC20 {
     mapping(address => Account) private _accounts;
 
     // 1 year is equal to in seconds. 60 sec * 60 min * 24 hr * 365 days = 31536000 seconds in a year.
-    uint256 constant private SECONDS_PER_YEAR = 31536000;
+    uint256 private constant SECONDS_PER_YEAR = 31536000;
 
     // Statuses
-    uint8 constant STAKE_STATUS = 1;
-    uint8 constant PAYOUT_STATUS = 0;
+    uint8 private constant STAKE_STATUS = 1;
+    uint8 private constant PAYOUT_STATUS = 0;
 
     // Contract creation
     constructor(uint256 initialSupply) ERC20("Celery", "CLY") {
@@ -74,10 +74,7 @@ contract Celery is ERC20 {
     /// @dev Check if already staking and if not, process an account payout then switch to staking.
     function startStake() public {
         // Check if Account is already staking
-        require(!_isAccountInStake(), "Account already in stake status.");
-
-        // Process an account payout before switching account to staking.
-        _processNormalPayoutToAccount();
+        require(_isAccountInPayout(), "Already in stake status.");
 
         _startStake();
     }
@@ -86,10 +83,10 @@ contract Celery is ERC20 {
     /// @param amount number of tokens to add to Account balance.
     function increaseBalanceAndStake(uint256 amount) public {
         // Check if amount is greater than zero.
-        require(amount > 0, "Value must be greater than zero.");
+        require(amount > 0, "Amount must be greater than 0.");
 
         // Start staking if not already.
-        startStake();
+        _startStake();
 
         // Calculate interest on the current staked amount before adding additional tokens.
         _calculateStakedAmount();
@@ -107,13 +104,7 @@ contract Celery is ERC20 {
     /// @notice Switches Account status to start payout.
     function startPayout() public {
         // Check if Account is already in payout
-        require(!_isAccountInPayout(), "Account already in payout status.");
-
-        // Calculate interest on the current staked amount before switching account to payout.
-        _calculateStakedAmount();
-
-        // Set Account to start payout.
-        _setAccountToPayout();
+        require(_isAccountInStake(), "Already in payout status.");
 
         _startPayout();
     }
@@ -121,7 +112,7 @@ contract Celery is ERC20 {
     /// @notice Receive the tokens that are available for payout.
     function collectPayout() public {
         // Start payout if not already
-        startPayout();
+        _startPayout();
 
         // Process an account payout
         _processNormalPayoutToAccount();
@@ -131,7 +122,7 @@ contract Celery is ERC20 {
     /// @param amount of tokens to collect from account
     function forcePayout(uint256 amount) public {
         // Start payout if not already
-        startPayout();
+        _startPayout();
 
         // Process an account payout
         uint256 normalPayoutAmount = _processNormalPayoutToAccount();
@@ -154,7 +145,7 @@ contract Celery is ERC20 {
         if (_isAccountInStake()) {
             return;
         }
-        
+
         // Process an account payout before switching account to staking.
         _processNormalPayoutToAccount();
 
@@ -196,8 +187,7 @@ contract Celery is ERC20 {
     */
     function _calculateStakedAmount() private {
         // Calculate the number of seconds that the Account has been staking for using block time.
-        uint256 secondsStakedNorm = block.timestamp -
-            _accounts[msg.sender].lastProcessedTime;
+        uint256 secondsStakedNorm = block.timestamp - _accounts[msg.sender].lastProcessedTime;
 
         // Get number of tokens Account is staking.
         uint256 currStakedNorm = _getAmount();
@@ -220,10 +210,7 @@ contract Celery is ERC20 {
         // Euler's number represented as a 60.18-decimal fixed-point number
         uint256 euler = 2718281828459045235;
         // Calculate the percentage of the year staked. Ex. half year = 50% = 0.5
-        uint256 percentageYearStaked = PRBMathUD60x18.div(
-            secondsStaked,
-            PRBMathUD60x18.fromUint(SECONDS_PER_YEAR)
-        );
+        uint256 percentageYearStaked = PRBMathUD60x18.div(secondsStaked, PRBMathUD60x18.fromUint(SECONDS_PER_YEAR));
 
         // Convert staked amount into fixed point number.
         uint256 currStaked = PRBMathUD60x18.fromUint(currStakedNorm);
@@ -284,38 +271,25 @@ contract Celery is ERC20 {
         }
 
         // Get Account last staking balance.
-        uint256 payoutAmountSnapshotInt = _accounts[msg.sender]
-            .lastStakingBalance;
+        uint256 payoutAmountSnapshotInt = _accounts[msg.sender].lastStakingBalance;
 
         // Convert Account last staking balance into fixed point decimal.
-        uint256 payoutAmountSnapshot = PRBMathUD60x18.fromUint(
-            payoutAmountSnapshotInt
-        );
+        uint256 payoutAmountSnapshot = PRBMathUD60x18.fromUint(payoutAmountSnapshotInt);
 
         // Set payout period to one year.
         uint256 payoutPeriodInSecondsInt = SECONDS_PER_YEAR;
 
         // Convert payout period into fixed point decimal.
-        uint256 payoutPeriodInSeconds = PRBMathUD60x18.fromUint(
-            payoutPeriodInSecondsInt
-        );
+        uint256 payoutPeriodInSeconds = PRBMathUD60x18.fromUint(payoutPeriodInSecondsInt);
 
         // Convert length of time to fixed point decimal.
-        uint256 timePassedInSeconds = PRBMathUD60x18.fromUint(
-            timePassedInSecondsInt
-        );
+        uint256 timePassedInSeconds = PRBMathUD60x18.fromUint(timePassedInSecondsInt);
 
         // Calculate percentage of the year that has passed. Ex. half year = 50% = 0.5
-        uint256 payoutPeriodPercentage = PRBMathUD60x18.div(
-            timePassedInSeconds,
-            payoutPeriodInSeconds
-        );
+        uint256 payoutPeriodPercentage = PRBMathUD60x18.div(timePassedInSeconds, payoutPeriodInSeconds);
 
         // Multiply percentage of year with the last staking balance to calculate max payout.
-        uint256 maxPayoutAmount = PRBMathUD60x18.mul(
-            payoutPeriodPercentage,
-            payoutAmountSnapshot
-        );
+        uint256 maxPayoutAmount = PRBMathUD60x18.mul(payoutPeriodPercentage, payoutAmountSnapshot);
 
         // Round max payout up
         uint256 maxPayoutAmountCeil = PRBMathUD60x18.ceil(maxPayoutAmount);
@@ -356,10 +330,7 @@ contract Celery is ERC20 {
         uint256 accountBalance = _getAmount();
 
         // Check if force payout of more than account balancee
-        require(
-            amount <= accountBalance,
-            "Insufficient account balance"
-        );
+        require(amount <= accountBalance, "Insufficient account balance");
 
         // Subtract amount collected from account balance
         _setAmount(accountBalance - amount);
@@ -432,13 +403,13 @@ contract Celery is ERC20 {
     function _setAccountToPayout() private {
         _setStatus(PAYOUT_STATUS);
         // Notify that account status is now paying out
-        emit AccountStatusEvent(msg.sender, 0);
+        emit AccountStatusEvent(msg.sender, PAYOUT_STATUS);
     }
 
     function _setAccountToStake() private {
         _setStatus(STAKE_STATUS);
         // Notify that account status is now staking
-        emit AccountStatusEvent(msg.sender, 1);
+        emit AccountStatusEvent(msg.sender, STAKE_STATUS);
     }
 
     function _setStatus(uint8 status) private {

@@ -31,7 +31,26 @@ describe("Test Celery reverts", function () {
     // Test case
     it("Test if Increase Balance with zero reverts", async function () {
         await expect(Celery.increaseBalanceAndStake(0)).to.be.revertedWith(
-            "Value must be greater than zero."
+            "Amount must be greater than 0."
+        );
+    });
+
+    // Test case
+    it("Test start stake twice reverts", async function () {
+        // Start Stake
+        await Celery.startStake();
+
+        // Start Stake again
+        await expect(Celery.startStake()).to.be.revertedWith(
+            "Already in stake status."
+        );
+    });
+
+    // Test case
+    it("Test start payout when already in payout reverts", async function () {
+        // Start Payout
+        await expect(Celery.startPayout()).to.be.revertedWith(
+            "Already in payout status."
         );
     });
 });
@@ -90,7 +109,7 @@ describe("Test Celery staking", function () {
 
     // Test case
     it("Test if start stake changes account status to staking", async function () {
-    // Start Stake
+        // Start Stake
         await Celery.startStake();
 
         // Test if account status is staking
@@ -99,7 +118,7 @@ describe("Test Celery staking", function () {
 
     // Test case
     it("Test if account defaults to payout status", async function () {
-    // Test if account status is payout
+        // Test if account status is payout
         await expectStatus(this.owner.address, 0);
     });
 
@@ -118,7 +137,7 @@ describe("Test Celery staking", function () {
 
             // Calculate new staked amouont
             stakedAmount =
-        calculateStake(stakedAmount, increaseTime) + increaseStakeAmount;
+                calculateStake(stakedAmount, increaseTime) + increaseStakeAmount;
             // Account amount should increase by staked + interest + stake added
             await expectAccountAmount(this.owner.address, stakedAmount);
 
@@ -173,20 +192,8 @@ describe("Test Celery staking", function () {
     });
 
     // Test case
-    it("Test start stake twice", async function () {
-    // Start Stake
-        await Celery.startStake();
-
-        // Start Stake
-        await Celery.startStake();
-
-        // Test if accuont status is staking
-        await expectStatus(this.owner.address, 1);
-    });
-
-    // Test case
     it("Test collect with nothing staked", async function () {
-    // Collect Payout
+        // Collect Payout
         await Celery.collectPayout();
         // Test if account staked balance still 0
         await expectAccountAmount(this.owner.address, 0);
@@ -241,7 +248,7 @@ describe("Test Celery payouts", function () {
 
         await Celery.startPayout();
 
-    // Should have 1000 tokens in Account Balance before each of the following tests run
+        // Should have 1000 tokens in Account Balance before each of the following tests run
     });
 
     it("Test if last staked balance is correect", async function () {
@@ -250,7 +257,7 @@ describe("Test Celery payouts", function () {
 
     // Test case
     it("Test if payout is half amount in a year", async function () {
-    // Wait half year in block time
+        // Wait half year in block time
         await increaseBlockTime(SECONDS_IN_A_YEAR / 2);
 
         // Collect Payout for half year
@@ -265,7 +272,7 @@ describe("Test Celery payouts", function () {
 
     // Test case
     it("Test if contract penalizes force payout by 50%", async function () {
-    // Wait half a year
+        // Wait half a year
         await increaseBlockTime(SECONDS_IN_A_YEAR / 2);
 
         // Collect a force payout for entire staked payout
@@ -283,7 +290,7 @@ describe("Test Celery payouts", function () {
 
     // Test case
     it("Test force payout of entire staked balance", async function () {
-    // Collect a force payout for entire staked payout
+        // Collect a force payout for entire staked payout
         await Celery.forcePayout(initialSupply);
 
         // Half of tokens penalized by 50%
@@ -304,7 +311,7 @@ describe("Test Celery payouts", function () {
 
     // Test case force payout event
     it("Test Force Payout event is emitted", async function () {
-    // Wait half year
+        // Wait half year
         await increaseBlockTime(SECONDS_IN_A_YEAR / 2);
 
         await expect(Celery.forcePayout(1000))
