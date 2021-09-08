@@ -16,14 +16,16 @@ contract TokenSale {
         TokenPrice = price;
     }
 
-    function BuyTokens(uint256 numberOfTokens) public payable {
+    /// @notice Buy tokens from the contract
+    /// @param amount number of tokens to purchase
+    function BuyTokens(uint256 amount) public payable {
         require(SaleActive, "The Celery token sale has ended");
         require(
-            msg.value == (numberOfTokens * TokenPrice),
+            msg.value == (amount * TokenPrice),
             "Your BCH and Celery ratio amounts must match per the price"
         );
 
-        uint256 scaledAmount = numberOfTokens *
+        uint256 scaledAmount = amount *
             (uint256(10)**TokenContract.decimals());
 
         require(
@@ -31,18 +33,21 @@ contract TokenSale {
             "Token sale contract does not have enough Celery"
         );
 
-        TokensSold += numberOfTokens;
+        TokensSold += amount;
         require(TokenContract.transfer(msg.sender, scaledAmount));
 
-        emit SoldEvent(msg.sender, numberOfTokens);
+        emit SoldEvent(msg.sender, amount);
     }
 
+    /// @notice For owner to start sale.
     function StartSale() public {
         _ownerCheck();
         SaleActive = true;
         emit StartSaleEvent();
     }
 
+
+    /// @notice For owner to end sale and collect proceeds.
     function EndSale() public {
         _ownerCheck();
         
@@ -54,6 +59,7 @@ contract TokenSale {
             )
         );
 
+        // Transfer currency to the owner. 
         payable(msg.sender).transfer(address(this).balance);
 
         SaleActive = false;
