@@ -25,8 +25,7 @@ contract TokenSale {
             "Your BCH and Celery ratio amounts must match per the price"
         );
 
-        uint256 scaledAmount = amount *
-            (uint256(10)**TokenContract.decimals());
+        uint256 scaledAmount = amount * (uint256(10)**TokenContract.decimals());
 
         require(
             scaledAmount <= TokenContract.balanceOf(address(this)),
@@ -46,11 +45,10 @@ contract TokenSale {
         emit StartSaleEvent();
     }
 
-
     /// @notice For owner to end sale and collect proceeds.
     function EndSale() public {
         _ownerCheck();
-        
+
         // Send unsold tokens to the owner.
         require(
             TokenContract.transfer(
@@ -59,7 +57,7 @@ contract TokenSale {
             )
         );
 
-        // Transfer currency to the owner. 
+        // Transfer currency to the owner.
         payable(msg.sender).transfer(address(this).balance);
 
         SaleActive = false;
