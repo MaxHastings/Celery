@@ -32,7 +32,7 @@ npx hardhat compile
 Run Unit Test code coverage
 
 ```shell
-npx hardhat compile
+npx hardhat coverage
 ```
 
 ## Contributing
