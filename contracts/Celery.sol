@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: GNU General Public License v3.0
+//SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -23,7 +23,7 @@ contract Celery is ERC20 {
     mapping(address => Account) private _accounts;
 
     // 1 year is equal to in seconds. 60 sec * 60 min * 24 hr * 365 days = 31536000 seconds in a year.
-    uint256 constant SECONDS_PER_YEAR = 31536000;
+    uint256 constant private SECONDS_PER_YEAR = 31536000;
 
     // Statuses
     uint8 constant STAKE_STATUS = 1;
@@ -72,21 +72,24 @@ contract Celery is ERC20 {
 
     /// @notice Switches Account status to start staking.
     /// @dev Check if already staking and if not, process an account payout then switch to staking.
-    function StartStake() public {
+    function startStake() public {
         // Check if Account is already staking
         require(!_isAccountInStake(), "Account already in stake status.");
+
+        // Process an account payout before switching account to staking.
+        _processNormalPayoutToAccount();
 
         _startStake();
     }
 
     /// @notice Transfer additional tokens to account balance and start staking.
     /// @param amount number of tokens to add to Account balance.
-    function IncreaseBalanceAndStake(uint256 amount) public {
+    function increaseBalanceAndStake(uint256 amount) public {
         // Check if amount is greater than zero.
         require(amount > 0, "Value must be greater than zero.");
 
         // Start staking if not already.
-        _startStake();
+        startStake();
 
         // Calculate interest on the current staked amount before adding additional tokens.
         _calculateStakedAmount();
@@ -102,17 +105,23 @@ contract Celery is ERC20 {
     }
 
     /// @notice Switches Account status to start payout.
-    function StartPayout() public {
+    function startPayout() public {
         // Check if Account is already in payout
         require(!_isAccountInPayout(), "Account already in payout status.");
+
+        // Calculate interest on the current staked amount before switching account to payout.
+        _calculateStakedAmount();
+
+        // Set Account to start payout.
+        _setAccountToPayout();
 
         _startPayout();
     }
 
     /// @notice Receive the tokens that are available for payout.
-    function CollectPayout() public {
+    function collectPayout() public {
         // Start payout if not already
-        _startPayout();
+        startPayout();
 
         // Process an account payout
         _processNormalPayoutToAccount();
@@ -120,9 +129,9 @@ contract Celery is ERC20 {
 
     /// @notice Force a payout amount to collect with up to a 50% penalty
     /// @param amount of tokens to collect from account
-    function ForcePayout(uint256 amount) public {
+    function forcePayout(uint256 amount) public {
         // Start payout if not already
-        _startPayout();
+        startPayout();
 
         // Process an account payout
         uint256 normalPayoutAmount = _processNormalPayoutToAccount();
@@ -349,7 +358,7 @@ contract Celery is ERC20 {
         // Check if force payout of more than account balancee
         require(
             amount <= accountBalance,
-            "Collect payout is larger than Account balance"
+            "Insufficient account balance"
         );
 
         // Subtract amount collected from account balance
