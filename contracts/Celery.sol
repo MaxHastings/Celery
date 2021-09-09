@@ -51,7 +51,7 @@ contract Celery is ERC20 {
         return _accounts[addr].lastProcessedTime;
     }
 
-    /// @notice Retrieves what the last staking Account Balance was before payout mode started. 
+    /// @notice Retrieves what the last staking Account Balance was before payout mode started.
     /// @param addr The address that is asssociated with the Account
     /// @dev Account status must be in payout for this data to be useful.
     /// @return epoch time in seconds
@@ -115,12 +115,16 @@ contract Celery is ERC20 {
         _startPayout();
 
         // Process an account payout
-        _processNormalPayoutToAccount();
+        uint256 payout = _processNormalPayoutToAccount();
+        require(payout > 0, "Nothing to payout.");
     }
 
     /// @notice Force a payout amount to collect with up to a 50% penalty
     /// @param amount of tokens to collect from account
     function forcePayout(uint256 amount) public {
+        // Check if amount is greater than zero.
+        require(amount > 0, "Amount must be greater than 0.");
+
         // Start payout if not already
         _startPayout();
 

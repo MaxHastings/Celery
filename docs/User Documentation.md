@@ -13,6 +13,7 @@ Calling this function will switch your Account to staking and will begin to earn
 ```
 Parameters: none
 Returns: none
+Handled errors: If account is already staking
 ```
 
 ### Increase Balance And Stake
@@ -20,8 +21,9 @@ Returns: none
 Calling this function will transfer tokens from your wallet into your Account Balance, and will switch your Account to  staking if its not already. You will begin to earn 100% APY interest on your entire Account Balance right away. You can call this function as many times as you would like.
 
 ```
-Parameters: amount (uint256) 0 is not allowed
+Parameters: amount (uint256)
 Returns: none
+Handled errors: If "amount" parameter is 0
 ```
 
 ### Start Payout
@@ -37,6 +39,7 @@ Here is an example. If you have 1,200 tokens in your Account Balance and you cal
 ```
 Parameters: none
 Returns: none
+Handled errors: If the collected payout would be 0
 ```
 
 ### Force Payout
@@ -52,6 +55,7 @@ Here is an example. If your Account Balance has 1,000 tokens and your account ha
 ```
 Parameters: amount (uint256)
 Returns: none
+Handled errors: If "amount" parameter is 0 or if the force amount is greater than your account balance in the contract
 ```
 
 ### Get Account Balance
