@@ -182,7 +182,7 @@ contract Celery is ERC20 {
     t = length of time the interest is applied for
     r = Annual Interest Rate = APR
     e = Euler's Number = 2.718...
-    APR = 0.69314...%
+    APR = LN(2) = 0.69314...%
     APY = 100%
     */
     function _calculateStakedAmount() private {
