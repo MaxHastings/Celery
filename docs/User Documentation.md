@@ -18,7 +18,7 @@ Handled errors: If account is already staking
 
 ### Increase Balance And Stake
 
-Calling this function will transfer tokens from your wallet into your Account Balance, and will switch your Account to  staking if its not already. You will begin to earn 100% APY interest on your entire Account Balance right away. You can call this function as many times as you would like.
+Calling this function will transfer tokens from your wallet into your Account Balance, and will switch your Account to  staking if its not already. You will begin to earn 100% APY interest on your entire Account Balance right away.
 
 ```
 Parameters: amount (uint256)
