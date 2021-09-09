@@ -389,7 +389,7 @@ async function expectTokenBalance(address, amount) {
 }
 
 async function expectAccountAmount(address, amount) {
-    expect((await Celery.getStakedAmount(address)).toString()).to.equal(
+    expect((await Celery.getAccountBalance(address)).toString()).to.equal(
         amount.toString()
     );
 }

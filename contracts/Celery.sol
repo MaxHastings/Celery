@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "prb-math/contracts/PRBMathUD60x18.sol";
 
 struct Account {
-    // How much Celery is in the contract for a particular address
-    uint256 amount;
+    // The number of tokens in the Account balance
+    uint256 balance;
     // The last time (epoch) the contract processed calculating Account interest or payout.
     uint256 lastProcessedTime;
     // Remember the last staking balance when Account switches to payout. Used for calculating payout amount.
@@ -37,11 +37,11 @@ contract Celery is ERC20 {
 
     /*** Public read functions ***/
 
-    /// @notice Retrieves the amount of tokens currently staked in an Account
+    /// @notice Retrieves the amount of tokens currently in Account Balance
     /// @param addr The address that is asssociated with the Account
-    /// @return amount of staked tokens in the Account
-    function getStakedAmount(address addr) public view returns (uint256) {
-        return _accounts[addr].amount;
+    /// @return amount of tokens in the Account
+    function getAccountBalance(address addr) public view returns (uint256) {
+        return _accounts[addr].balance;
     }
 
     /// @notice Retrieves the last time the Account was updated.
@@ -51,7 +51,7 @@ contract Celery is ERC20 {
         return _accounts[addr].lastProcessedTime;
     }
 
-    /// @notice Retrieves the last time the Account was updated.
+    /// @notice Retrieves what the last staking Account Balance was before payout mode started. 
     /// @param addr The address that is asssociated with the Account
     /// @dev Account status must be in payout for this data to be useful.
     /// @return epoch time in seconds
@@ -95,7 +95,7 @@ contract Celery is ERC20 {
         _transfer(msg.sender, address(this), amount);
 
         // Add the additional tokens to their Account balance.
-        _accounts[msg.sender].amount += amount;
+        _accounts[msg.sender].balance += amount;
 
         // Notify that the account increased its token balance.
         emit IncreaseBalanceAndStakeEvent(msg.sender, amount);
@@ -165,7 +165,7 @@ contract Celery is ERC20 {
         // Set Account to start payout.
         _setAccountToPayout();
 
-        uint256 currStakedNorm = _getAmount();
+        uint256 currStakedNorm = _getBalance();
         // Remember last staking balance. Used later for calculating payout amount.
         _accounts[msg.sender].lastStakingBalance = currStakedNorm;
     }
@@ -190,7 +190,7 @@ contract Celery is ERC20 {
         uint256 secondsStakedNorm = block.timestamp - _accounts[msg.sender].lastProcessedTime;
 
         // Get number of tokens Account is staking.
-        uint256 currStakedNorm = _getAmount();
+        uint256 currStakedNorm = _getBalance();
 
         // Update the time for last processed account
         _updateProcessedTime();
@@ -231,7 +231,7 @@ contract Celery is ERC20 {
         uint256 newAmountInt = PRBMathUD60x18.toUint(newAmountCeil);
 
         // Set new staked amount
-        _setAmount(newAmountInt);
+        _setBalance(newAmountInt);
     }
 
     /*
@@ -260,7 +260,7 @@ contract Celery is ERC20 {
         uint256 timePassedInSecondsInt = timeStamp - lastTime;
 
         // Get the amount of tokens in Account balance.
-        uint256 accountBalance = _getAmount();
+        uint256 accountBalance = _getBalance();
 
         // Update the last time account was processed.
         _updateProcessedTime();
@@ -312,7 +312,7 @@ contract Celery is ERC20 {
         _payoutAmountToAccount(payoutAmount);
 
         // Subtract payout amount from Account balance.
-        _accounts[msg.sender].amount -= payoutAmount;
+        _accounts[msg.sender].balance -= payoutAmount;
 
         // Notify that an Account collected a payout.
         emit CollectPayoutEvent(msg.sender, payoutAmount);
@@ -327,13 +327,13 @@ contract Celery is ERC20 {
     */
     function _processForcePayout(uint256 amount) private {
         // Get Account balance
-        uint256 accountBalance = _getAmount();
+        uint256 accountBalance = _getBalance();
 
         // Check if force payout of more than account balancee
         require(amount <= accountBalance, "Insufficient account balance");
 
         // Subtract amount collected from account balance
-        _setAmount(accountBalance - amount);
+        _setBalance(accountBalance - amount);
         // Update last time processsed account
         _updateProcessedTime();
 
@@ -396,8 +396,8 @@ contract Celery is ERC20 {
         return _accounts[msg.sender].status;
     }
 
-    function _getAmount() private view returns (uint256) {
-        return _accounts[msg.sender].amount;
+    function _getBalance() private view returns (uint256) {
+        return _accounts[msg.sender].balance;
     }
 
     function _setAccountToPayout() private {
@@ -416,7 +416,7 @@ contract Celery is ERC20 {
         _accounts[msg.sender].status = status;
     }
 
-    function _setAmount(uint256 amount) private {
-        _accounts[msg.sender].amount = amount;
+    function _setBalance(uint256 amount) private {
+        _accounts[msg.sender].balance = amount;
     }
 }
