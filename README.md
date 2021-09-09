@@ -8,6 +8,8 @@ Celery is the first Blockchain annuity to be created. This repository contains t
 
 [White Paper](https://celery.cash/whitepaper.pdf)
 
+[Celery.sol](/contracts/Celery.sol)
+
 ## Install
 
 Intended to be used with Visual Studio Code
