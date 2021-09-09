@@ -29,7 +29,26 @@ describe("Test Celery reverts", function () {
 
     it("Test if Increase Balance with zero reverts", async function () {
         await expect(Celery.increaseBalanceAndStake(0)).to.be.revertedWith(
-            "Value must be greater than zero."
+            "Amount must be greater than 0."
+        );
+    });
+
+    // Test case
+    it("Test start stake twice reverts", async function () {
+        // Start Stake
+        await Celery.startStake();
+
+        // Start Stake again
+        await expect(Celery.startStake()).to.be.revertedWith(
+            "Already in stake status."
+        );
+    });
+
+    // Test case
+    it("Test start payout when already in payout reverts", async function () {
+        // Start Payout
+        await expect(Celery.startPayout()).to.be.revertedWith(
+            "Already in payout status."
         );
     });
 });
@@ -82,7 +101,7 @@ describe("Test Celery staking", function () {
     });
 
     it("Test if start stake changes account status to staking", async function () {
-    // Start Stake
+        // Start Stake
         await Celery.startStake();
 
         // Test if account status is staking
@@ -102,6 +121,7 @@ describe("Test Celery staking", function () {
     });
 
     it("Test if account defaults to payout status", async function () {
+
     // Test if account status is payout by default
         await expectStatus(this.owner.address, 0);
     });
@@ -153,7 +173,7 @@ describe("Test Celery staking", function () {
 
             // Calculate new staked amouont
             stakedAmount =
-        calculateStake(stakedAmount, increaseTime) + increaseStakeAmount;
+                calculateStake(stakedAmount, increaseTime) + increaseStakeAmount;
             // Account amount should increase by staked + interest + stake added
             await expectAccountAmount(this.owner.address, stakedAmount);
 
@@ -202,7 +222,7 @@ describe("Test Celery staking", function () {
     });
 
     it("Test collect with nothing staked", async function () {
-    // Collect Payout
+        // Collect Payout
         await Celery.collectPayout();
         // Test if account staked balance still 0
         await expectAccountAmount(this.owner.address, 0);
@@ -256,7 +276,7 @@ describe("Test Celery payouts", function () {
 
         await Celery.startPayout();
 
-    // Should have 1000 tokens in Account Balance before each of the following tests run
+        // Should have 1000 tokens in Account Balance before each of the following tests run
     });
 
     it("Test if last staked balance is correct", async function () {
