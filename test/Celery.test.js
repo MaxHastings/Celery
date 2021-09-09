@@ -150,17 +150,6 @@ describe("Test Celery staking", function () {
         await expectLastProcessedTime(this.owner.address, await getLastBlockTime());
     });
 
-    it("Test if account switches to payout status on collect payout", async function () {
-        // Increase Stake
-        await Celery.increaseBalanceAndStake(1000);
-
-        await Celery.startPayout();
-        // Test if account status is payout
-        await expectStatus(this.owner.address, 0);
-        // Test if last process time is updated
-        await expectLastProcessedTime(this.owner.address, await getLastBlockTime());
-    });
-
     it("Test if account switches to payout status on start payout", async function () {
         // Increase Stake
         await Celery.increaseBalanceAndStake(1000);

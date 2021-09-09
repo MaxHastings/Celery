@@ -115,7 +115,7 @@ contract Celery is ERC20 {
         _startPayout();
 
         // Process an account payout
-        uint256 payout = _processNormalPayoutToAccount();
+        uint256 payout = _processPayoutToAccount();
         require(payout > 0, "Nothing to payout.");
     }
 
@@ -129,15 +129,15 @@ contract Celery is ERC20 {
         _startPayout();
 
         // Process an account payout
-        uint256 normalPayoutAmount = _processNormalPayoutToAccount();
+        uint256 payoutAmount = _processPayoutToAccount();
 
-        // If normal payout amount is greater than or equal to what user wants to collect then return early.
-        if (normalPayoutAmount >= amount) {
+        // If payout amount is greater than or equal to what user wants to collect then return early.
+        if (payoutAmount >= amount) {
             return;
         }
 
         // Calculate the remaining number of tokens to force payout.
-        uint256 penalizedAmountToCollect = amount - normalPayoutAmount;
+        uint256 penalizedAmountToCollect = amount - payoutAmount;
 
         // Process a force payout amount for the remainder
         _processForcePayout(penalizedAmountToCollect);
@@ -151,7 +151,7 @@ contract Celery is ERC20 {
         }
 
         // Process an account payout before switching account to staking.
-        _processNormalPayoutToAccount();
+        _processPayoutToAccount();
 
         // Set Account to start staking.
         _setAccountToStake();
@@ -253,7 +253,7 @@ contract Celery is ERC20 {
 
     Returns token amount paid to account owner. Default is 0
     */
-    function _processNormalPayoutToAccount() private returns (uint256) {
+    function _processPayoutToAccount() private returns (uint256) {
         // Get the latest block timestamp.
         uint256 timeStamp = block.timestamp;
 
@@ -312,15 +312,16 @@ contract Celery is ERC20 {
             payoutAmount = maxPayoutAmountInt;
         }
 
-        // Send token payout.
-        _payoutAmountToAccount(payoutAmount);
+        if(payoutAmount > 0) {
+            // Send token payout.
+            _payoutAmountToAccount(payoutAmount);
 
-        // Subtract payout amount from Account balance.
-        _accounts[msg.sender].balance -= payoutAmount;
+            // Subtract payout amount from Account balance.
+            _accounts[msg.sender].balance -= payoutAmount;
 
-        // Notify that an Account collected a payout.
-        emit CollectPayoutEvent(msg.sender, payoutAmount);
-
+            // Notify that an Account collected a payout.
+            emit CollectPayoutEvent(msg.sender, payoutAmount);
+        }
         // Return payout amount.
         return payoutAmount;
     }
