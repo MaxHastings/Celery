@@ -10,6 +10,8 @@ Celery is the first Blockchain annuity to be created. This repository contains t
 
 [Celery.sol](/contracts/Celery.sol)
 
+[User Documentation](/docs/User%20Documentation.md)
+
 ## Install
 
 Intended to be used with Visual Studio Code
@@ -27,8 +29,6 @@ npm install -g solhint
 Install Solidity VSC [extension](https://marketplace.visualstudio.com/items?itemName=JuanBlanco.solidity)
 
 ## Usage
-
-[User Documentation](/docs/User%20Documentation.md)
 
 Run linting (automatically ran with below commands as well)
 
