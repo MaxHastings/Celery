@@ -2,19 +2,31 @@
 
 ## Description
 
-Celery is the first Blockchain annuity to be created. This repository contains the smart contract source code, unit tests, and other related files for Celery. Visit our website to learn more about Celery https://celery.cash
+Celery is the first Blockchain annuity to be created. This repository contains the smart contract source code, unit tests, documentation and other related files for Celery.
+
+[Website](https://celery.cash)
+
+[White Paper](https://celery.cash/whitepaper.pdf)
 
 ## Install
 
 Intended to be used with Visual Studio Code
 
 Install NPM/Yarn
-run: npm install
+```
+npm install
+```
 
-Install solhint globally: npm install -g solhint
-Install Solidity VSC extension: https://marketplace.visualstudio.com/items?itemName=JuanBlanco.solidity
+Install solhint globally
+```
+npm install -g solhint
+```
+
+Install Solidity VSC [extension](https://marketplace.visualstudio.com/items?itemName=JuanBlanco.solidity)
 
 ## Usage
+
+[User Documentation](/docs/User%20Documentation.md)
 
 Run linting (automatically ran with below commands as well)
 
@@ -42,11 +54,11 @@ npm run coverage
 
 ## Contributing
 
-To learn how to contribute to the project please contact @MaxHastings on Telegrarm. Find him on the official Celery Telegram group https://t.me/celeryToken
+To learn how to contribute to the project please contact @MaxHastings on Telegrarm. Find him on the official Celery [Telegram group](https://t.me/celeryToken)
 
 ## Security
 
-If you find any security vulnerabilities or concerns please privately contact @MaxHastings on Telegram. Find him on the official Celery Telegram group https://t.me/celeryToken
+If you find any security vulnerabilities or concerns please privately contact @MaxHastings on Telegram. Find him on the official Celery [Telegram group](https://t.me/celeryToken)
 
 Bugs found will be rewarded based on severity.
 

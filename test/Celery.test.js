@@ -51,6 +51,19 @@ describe("Test Celery reverts", function () {
             "Already in payout status."
         );
     });
+
+    it("Test collect with nothing staked reverts", async function () {
+        // Collect Payout
+        await expect(Celery.collectPayout()).to.be.revertedWith(
+            "Nothing to payout."
+        );
+    });
+
+    it("Test if force payout with zero reverts", async function () {
+        await expect(Celery.forcePayout(0)).to.be.revertedWith(
+            "Amount must be greater than 0."
+        );
+    });
 });
 
 describe("Test Celery staking", function () {
@@ -113,7 +126,7 @@ describe("Test Celery staking", function () {
     it("Test if increase balance and stake changes account status to staking", async function () {
         // Increase Stake
         await Celery.increaseBalanceAndStake(1000);
-        
+
         // Test if account status is staking
         await expectStatus(this.owner.address, 1);
         // Test if last process time is updated
@@ -131,17 +144,6 @@ describe("Test Celery staking", function () {
         await Celery.increaseBalanceAndStake(1000);
 
         await Celery.forcePayout(1000);
-        // Test if account status is payout
-        await expectStatus(this.owner.address, 0);
-        // Test if last process time is updated
-        await expectLastProcessedTime(this.owner.address, await getLastBlockTime());
-    });
-
-    it("Test if account switches to payout status on collect payout", async function () {
-        // Increase Stake
-        await Celery.increaseBalanceAndStake(1000);
-
-        await Celery.collectPayout();
         // Test if account status is payout
         await expectStatus(this.owner.address, 0);
         // Test if last process time is updated
@@ -219,19 +221,6 @@ describe("Test Celery staking", function () {
         );
         // Test if account staked balance is set back to 0
         await expectAccountAmount(this.owner.address, 0);
-    });
-
-    it("Test collect with nothing staked", async function () {
-        // Collect Payout
-        await Celery.collectPayout();
-        // Test if account staked balance still 0
-        await expectAccountAmount(this.owner.address, 0);
-
-        // Test that account status is in payout
-        await expectStatus(this.owner.address, 0);
-
-        // Test if owner token balance still has same number of tokens
-        await expectTokenBalance(this.owner.address, initialSupply);
     });
 
     it("Test if contract mints tokens on payout", async function () {
@@ -367,7 +356,7 @@ describe("Test Celery payouts", function () {
         await increaseBlockTime(SECONDS_IN_A_YEAR);
 
         await Celery.forcePayout(1000);
-        
+
         // Expect to receive full amount with no penalty since one year has passed.
         await expectTokenBalance(this.owner.address, 1000);
     });
