@@ -56,16 +56,15 @@ describe("TokenSale", function () {
             (await ethers.provider.getBalance(TokenSale.address)).toString()
         ).to.equal("1000000");
 
-        await TokenSale.endSale();
-
         //Test if ethereum was sent to owner after ending token sale.
         await expect(
-            (await ethers.provider.getBalance(TokenSale.address)).toString()
-        ).to.equal("0");
+            await TokenSale.endSale()
+        ).to.changeEtherBalance(this.owner, 1000000);
+
     });
 
     it("Test too much value sent to Buy Tokens", async function () {
-    // Transfer tokens to Token Sale contract
+        // Transfer tokens to Token Sale contract
         await Celery.transfer(TokenSale.address, scaleTokenAmount(1000));
 
         await TokenSale.startSale();
@@ -78,7 +77,7 @@ describe("TokenSale", function () {
     });
 
     it("Test too little value sent to Buy Tokens", async function () {
-    // Transfer tokens to Token Sale contract
+        // Transfer tokens to Token Sale contract
         await Celery.transfer(TokenSale.address, scaleTokenAmount(1000));
 
         await TokenSale.startSale();
@@ -91,7 +90,7 @@ describe("TokenSale", function () {
     });
 
     it("Test buying more tokens than contract has", async function () {
-    // Transfer tokens to Token Sale contract
+        // Transfer tokens to Token Sale contract
         await Celery.transfer(TokenSale.address, scaleTokenAmount(1000));
 
         await TokenSale.startSale();
