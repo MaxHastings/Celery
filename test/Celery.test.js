@@ -122,7 +122,7 @@ describe("Test Celery staking", function () {
 
     it("Test if account defaults to payout status", async function () {
 
-    // Test if account status is payout by default
+        // Test if account status is payout by default
         await expectStatus(this.owner.address, 0);
     });
 

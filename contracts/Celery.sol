@@ -377,7 +377,7 @@ contract Celery is ERC20 {
     event IncreaseBalanceAndStakeEvent(address _address, uint256 _amount);
 
     // Event that an account status has been changed.
-    event AccountStatusEvent(address _address, uint256 _value);
+    event AccountStatusEvent(address _address, uint8 _value);
 
     /*** Helpers ***/
     function _updateProcessedTime() private {
