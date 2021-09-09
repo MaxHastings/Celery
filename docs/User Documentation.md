@@ -35,7 +35,7 @@ Calling this function will switch your Account to payout if its not already. Any
 Here is an example. If you have 1,200 tokens in your Account Balance and you call Collect Payout once a month, or more specifically 1/12 of a year then 100 tokens will be transferred to your wallet each time for 12 months until your Account Balance reaches 0. It is important to rememeber that while your Account is in payout mode you do not earn any interest on your Account Balance.
 
 ```
-Paramters: none
+Parameters: none
 Returns: none
 ```
 
@@ -50,8 +50,46 @@ When you use force payout you specify the number of tokens you wish to collect. 
 Here is an example. If your Account Balance has 1,000 tokens and your account has been in payout mode for 6 months or more specifically 1/2 year without collecting anything. Then 500 tokens will be available to collect, and 500 tokens will be unavailable to collect. If you force payout 1,000 tokens which is your entire Account balance then then force payout will first collect your 500 available tokens with no penalty and then collect the 500 unavailable tokens and apply a 50% penalty to them. You will then be transferred a total of 750 tokens back to your wallet.
 
 ```
-Paramters: amount (uint256)
+Parameters: amount (uint256)
 Returns: none
+```
+
+### Get Account Balance
+
+Retrieves the number of tokens in your account balance for the specified wallet address.
+
+```
+Parameters: address (Address)
+Returns: amount (uint256)
+```
+
+### Get Last Processed Time
+
+Retrieves the last time the account has been processed for the specified wallet address. Depending on if your account is in staking mode or payout mode. This is used interenally for both calculating how much interest has been earned and to calculate the number of tokens that are available to collect.
+
+```
+Parameters: address (Address)
+Returns: epoch time in seconds (uint256)
+```
+
+### Get Last Staking Balance
+
+Retrieves what the last staking Account Balance was before payout mode started for the specified wallet address. This is used internally for calculations to determine the number of tokens that are available to collect.
+
+```
+Parameters: address (Address)
+Returns: amount (uint256)
+```
+
+### Get Status
+
+Retrieves what the current Account status is for the specified wallet address. Returns back staking mode or payout mode. Default value is payout mode.
+
+0 = Payout, 1 = Staking
+
+```
+Parameters: address (Address)
+Returns: status (uint8)
 ```
 
 ## Math
@@ -79,7 +117,7 @@ Here is an example. If your Account Balance has 1,000 tokens and you stake for 4
 
 ### Payout
 
-When in payout phase your Account Balance slowly becomes available for you to collect. Your Account Balance will be fully available to collect after your account has been in payout mode for one year. You can collect payouts as often or as little as you want. Here are some examples.
+When in payout mode your Account Balance slowly becomes available for you to collect. Your Account Balance will be fully available to collect after your account has been in payout mode for one year. You can collect payouts as often or as little as you want. Here are some examples.
 
 If you have 1,200 tokens in your Account Balance and collect payout once per month. You will collect 100 tokens each time.
 
