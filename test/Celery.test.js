@@ -52,10 +52,20 @@ describe("Test Celery reverts", function () {
         );
     });
 
-    it("Test collect with nothing staked reverts", async function () {
+    it("Test collect payout with nothing in account balance", async function () {
         // Collect Payout
         await expect(Celery.collectPayout()).to.be.revertedWith(
             "Nothing to payout."
+        );
+    });
+
+    it("Test collect payout when account is staking reverts", async function () {
+
+        await Celery.startStake();
+
+        // Collect Payout
+        await expect(Celery.collectPayout()).to.be.revertedWith(
+            "Account is staking."
         );
     });
 

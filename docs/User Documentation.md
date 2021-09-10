@@ -32,25 +32,25 @@ Calling this function will switch your Account to payout. Your Account Balance w
 
 ### Collect Payout
 
-Calling this function will switch your Account to payout if its not already. Any available tokens in your Account Balance will be transfered back to your wallet. The amount of tokens that are considered available depends on how much time your Account has been in payout mode and the last time you collected payout. 
+Your account must be in payout before collecting. Calling this function will transfer all available tokens in your Account Balance back into your wallet. The amount of tokens that are considered available depends on how much time your Account has been in payout mode and the last time you collected payout. 
 
 Here is an example. If you have 1,200 tokens in your Account Balance and you call Collect Payout once a month, or more specifically 1/12 of a year then 100 tokens will be transferred to your wallet each time for 12 months until your Account Balance reaches 0. It is important to rememeber that while your Account is in payout mode you do not earn any interest on your Account Balance.
 
 ```
 Parameters: none
 Returns: none
-Handled errors: If the collected payout would be 0
+Handled errors: If the collected payout would be 0 or if account is staking
 ```
 
 ### Force Payout
 
 Use this function wisely.
 
-In a situation where you do not want to wait for your Account Balance to become available, you can use force payout to collect unavailable tokens in your Account Balance. There is a 50% penalty for all the unavailable tokens you force collect.
+In a situation where you do not want to wait for tokens in your Account Balance to become available, you can use force payout to collect unavailable tokens in your Account Balance. There is a 50% penalty for all the unavailable tokens that are force collected.
 
-When you use force payout you specify the number of tokens you wish to collect. Force payout will automatically collect all available tokens first before collecting unavailable ones. Only the unavailable tokens are penalized at 50%.
+When you use force payout you specify the number of tokens you wish to collect. Force payout will automatically collect all available tokens first before collecting unavailable ones. Only the unavailable tokens are penalized at 50%. If the number of available tokens is greater than what you specified then no unavailable tokens will be force collected.
 
-Here is an example. If your Account Balance has 1,000 tokens and your account has been in payout mode for 6 months or more specifically 1/2 year without collecting anything. Then 500 tokens will be available to collect, and 500 tokens will be unavailable to collect. If you force payout 1,000 tokens which is your entire Account balance then then force payout will first collect your 500 available tokens with no penalty and then collect the 500 unavailable tokens and apply a 50% penalty to them. You will then be transferred a total of 750 tokens back to your wallet.
+Here is an example. If your Account Balance has 1,000 tokens and your account has been in payout mode for 6 months or more specifically 1/2 year without collecting anything. Then 500 tokens will be available to collect, and 500 tokens will be unavailable to collect. If you force payout 1,000 tokens which is your entire Account balance then the force payout will first collect your 500 available tokens with no penalty and then collect the 500 unavailable tokens and apply a 50% penalty to them. You will then be transferred a total of 750 tokens back to your wallet.
 
 ```
 Parameters: amount (uint256)
@@ -60,7 +60,7 @@ Handled errors: If "amount" parameter is 0 or if the force amount is greater tha
 
 ### Get Account Balance
 
-Retrieves the number of tokens in your account balance for the specified wallet address.
+Retrieves the number of tokens in the account balance for the specified wallet address.
 
 ```
 Parameters: address (Address)
@@ -69,7 +69,7 @@ Returns: amount (uint256)
 
 ### Get Last Processed Time
 
-Retrieves the last time the account has been processed for the specified wallet address. Depending on if your account is in staking mode or payout mode. This is used interenally for both calculating how much interest has been earned and to calculate the number of tokens that are available to collect.
+Retrieves the last time the account has been processed for the specified wallet address. Depending on if the account is in staking mode or payout mode. This is used interenally for both calculating how much interest has been earned and to calculate the number of tokens that are available to collect.
 
 ```
 Parameters: address (Address)
@@ -100,7 +100,7 @@ Returns: status (uint8)
 
 ### Staking
 
-When staking you are earning continous compounding interest which equates to 100% APY or in laymen terms your Account balance will double in size every year when your Account is staking. The following is the exact formula used for calculating interest earned.
+When staking you are earning continous compounding interest which equates to 100% APY or in laymen terms your Account balance will double in size for each year that your Account is staking. The following is the exact formula used for calculating interest earned.
 
 ```
 P * e^(r * t) = P(t)

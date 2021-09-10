@@ -111,8 +111,8 @@ contract Celery is ERC20 {
 
     /// @notice Receive the tokens that are available for payout.
     function collectPayout() public {
-        // Start payout if not already
-        _startPayout();
+        // Make sure account is in payout before collecting.
+        require(_isAccountInPayout(), "Account is staking.");
 
         // Process an account payout
         uint256 payout = _processPayoutToAccount();
