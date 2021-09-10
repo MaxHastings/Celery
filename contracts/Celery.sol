@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.8.7;
+pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "prb-math/contracts/PRBMathUD60x18.sol";
@@ -28,6 +28,13 @@ contract Celery is ERC20 {
     // Statuses
     uint8 private constant STAKE_STATUS = 1;
     uint8 private constant PAYOUT_STATUS = 0;
+
+    // APY 100% interest
+    // APR 69.314..% continously compounded interest rate
+    // Interest rate is represented as a 60.18-decimal fixed-point number
+    uint256 private constant INTEREST = 693147180559945309;
+    // Euler's constant represented as a 60.18-decimal fixed-point number
+    uint256 private constant EULER = 2718281828459045235;
 
     // Contract creation
     constructor(uint256 initialSupply) ERC20("Celery", "CLY") {
@@ -169,8 +176,8 @@ contract Celery is ERC20 {
         // Set Account to start payout.
         _setAccountToPayout();
 
-        uint256 currStakedNorm = _getBalance();
         // Remember last staking balance. Used later for calculating payout amount.
+        uint256 currStakedNorm = _getBalance();
         _accounts[msg.sender].lastStakingBalance = currStakedNorm;
     }
 
@@ -207,25 +214,19 @@ contract Celery is ERC20 {
         // Convert seconds staked into fixed point number.
         uint256 secondsStaked = PRBMathUD60x18.fromUint(secondsStakedNorm);
 
-        // APY 100% interest
-        // APR 69.314..% continously compounded interest rate
-        // Interest ratee is represented as a 60.18-decimal fixed-point number
-        uint256 interest = 693147180559945309;
-        // Euler's number represented as a 60.18-decimal fixed-point number
-        uint256 euler = 2718281828459045235;
         // Calculate the percentage of the year staked. Ex. half year = 50% = 0.5
         uint256 percentageYearStaked = PRBMathUD60x18.div(secondsStaked, PRBMathUD60x18.fromUint(SECONDS_PER_YEAR));
+
+        // Multiply interest rate by time staked
+        uint256 rateTime = PRBMathUD60x18.mul(INTEREST, percentageYearStaked);
+
+        // Continuously compound the interest with euler's constant
+        uint256 compoundedRate = PRBMathUD60x18.pow(EULER, rateTime);
 
         // Convert staked amount into fixed point number.
         uint256 currStaked = PRBMathUD60x18.fromUint(currStakedNorm);
 
-        // Multiply interest rate by time staked
-        uint256 rateTime = PRBMathUD60x18.mul(interest, percentageYearStaked);
-
-        // Continuously compound the interest with euler's constant
-        uint256 compoundedRate = PRBMathUD60x18.pow(euler, rateTime);
-
-        // Multiple compounded rate with staked amount
+        // Multiply compounded rate with staked amount
         uint256 newAmount = PRBMathUD60x18.mul(currStaked, compoundedRate);
 
         // Round up for consistency
@@ -258,11 +259,6 @@ contract Celery is ERC20 {
 
         // Update the last time account was processed.
         _updateProcessedTime();
-
-        // If time passed is zero or current balance amount is zero, end payout process early.
-        if (timePassedInSecondsInt == 0 || accountBalance == 0) {
-            return 0;
-        }
 
         // Get Account last staking balance.
         uint256 payoutAmountSnapshotInt = _accounts[msg.sender].lastStakingBalance;
@@ -302,7 +298,7 @@ contract Celery is ERC20 {
             payoutAmount = maxPayoutAmountInt;
         }
 
-        if(payoutAmount > 0) {
+        if (payoutAmount > 0) {
             // Send token payout.
             _payoutAmountToAccount(payoutAmount);
 
@@ -312,6 +308,7 @@ contract Celery is ERC20 {
             // Notify that an Account collected a payout.
             emit CollectPayoutEvent(msg.sender, payoutAmount);
         }
+
         // Return payout amount.
         return payoutAmount;
     }
