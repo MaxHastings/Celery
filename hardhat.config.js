@@ -4,11 +4,11 @@ require("solidity-coverage");
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
 task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
-  const accounts = await hre.ethers.getSigners();
+    const accounts = await hre.ethers.getSigners();
 
-  for (const account of accounts) {
-    console.log(account.address);
-  }
+    for (const account of accounts) {
+        console.log(account.address);
+    }
 });
 
 // You need to export an object to set up your config
@@ -18,5 +18,22 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: "0.8.7",
+    solidity: "0.8.4",
+    settings: {
+        optimizer: {
+            enabled: true,
+            runs: 200
+        }
+    },
+    networks: {
+        localtestnet: {
+            url: "http://192.168.3.110:8545",
+            chainId: 0x2711,
+            from: "0x2376313a5bf56152cad9f17b6b7c86065996c65b",
+            gas: "auto",
+            gasPrice: 0x10000000000,
+            gasMultiplier: 1,
+            accounts: "remote"
+        }
+    },
 };
