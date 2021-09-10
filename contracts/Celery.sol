@@ -217,7 +217,6 @@ contract Celery is ERC20 {
         uint256 currStaked = PRBMathUD60x18.fromUint(currStakedNorm);
 
         // Multiply interest rate by time staked
-        uint256 rateTime = PRBMathUD60x18.mul(interest, percentageYearStaked);
         uint256 rateTime = PRBMathUD60x18.mul(INTEREST, percentageYearStaked);
 
         // Continuously compound the interest with euler's constant
