@@ -119,8 +119,8 @@ contract Celery is ERC20 {
         // Make sure account is in payout before collecting.
         require(_isAccountInPayout(), "Account is staking.");
 
-        // Process an account payout
-        require(_processPayoutToAccount() > 0, "Nothing to payout.");
+        uint256 payout = _processPayoutToAccount();
+        require(payout > 0, "Nothing to payout.");
     }
 
     /// @notice Force a payout amount to collect with up to a 50% penalty
@@ -141,8 +141,10 @@ contract Celery is ERC20 {
         }
 
         // Calculate the remaining number of tokens to force payout.
+        uint256 penalizedAmountToCollect = amount - payoutAmount;
+
         // Process a force payout amount for the remainder
-        _processForcePayout(amount - payoutAmount);
+        _processForcePayout(penalizedAmountToCollect);
     }
 
     /*** ***/
@@ -172,7 +174,8 @@ contract Celery is ERC20 {
         _setAccountToPayout();
 
         // Remember last staking balance. Used later for calculating payout amount.
-        _accounts[msg.sender].lastStakingBalance = _getBalance();
+        uint256 currStakedNorm = _getBalance();
+        _accounts[msg.sender].lastStakingBalance = currStakedNorm;
     }
 
     /*
@@ -213,14 +216,14 @@ contract Celery is ERC20 {
         // Calculate the percentage of the year staked. Ex. half year = 50% = 0.5
         uint256 percentageYearStaked = PRBMathUD60x18.div(secondsStaked, PRBMathUD60x18.fromUint(SECONDS_PER_YEAR));
 
-        // Convert staked amount into fixed point number.
-        uint256 currStaked = PRBMathUD60x18.fromUint(currStakedNorm);
-
         // Multiply interest rate by time staked
         uint256 rateTime = PRBMathUD60x18.mul(INTEREST, percentageYearStaked);
 
         // Continuously compound the interest with euler's constant
         uint256 compoundedRate = PRBMathUD60x18.pow(EULER, rateTime);
+
+        // Convert staked amount into fixed point number.
+        uint256 currStaked = PRBMathUD60x18.fromUint(currStakedNorm);
 
         // Multiple compounded rate with staked amount
         uint256 newAmount = PRBMathUD60x18.mul(currStaked, compoundedRate);
