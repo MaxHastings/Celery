@@ -30,9 +30,9 @@ contract Celery is ERC20 {
     uint8 private constant PAYOUT_STATUS = 0;
 
     // Interest ratee is represented as a 60.18-decimal fixed-point number
-    uint256 private constant interest = 693147180559945309;
+    uint256 private constant INTEREST = 693147180559945309;
     // Euler's number represented as a 60.18-decimal fixed-point number
-    uint256 private constant euler = 2718281828459045235;
+    uint256 private constant EULER = 2718281828459045235;
 
     // Contract creation
     constructor(uint256 initialSupply) ERC20("Celery", "CLY") {
@@ -218,9 +218,10 @@ contract Celery is ERC20 {
 
         // Multiply interest rate by time staked
         uint256 rateTime = PRBMathUD60x18.mul(interest, percentageYearStaked);
+        uint256 rateTime = PRBMathUD60x18.mul(INTEREST, percentageYearStaked);
 
         // Continuously compound the interest with euler's constant
-        uint256 compoundedRate = PRBMathUD60x18.pow(euler, rateTime);
+        uint256 compoundedRate = PRBMathUD60x18.pow(EULER, rateTime);
 
         // Multiple compounded rate with staked amount
         uint256 newAmount = PRBMathUD60x18.mul(currStaked, compoundedRate);
@@ -255,11 +256,6 @@ contract Celery is ERC20 {
 
         // Update the last time account was processed.
         _updateProcessedTime();
-
-        // If time passed is zero or current balance amount is zero, end payout process early.
-        if (timePassedInSecondsInt == 0 || accountBalance == 0) {
-            return 0;
-        }
 
         // Get Account last staking balance.
         uint256 payoutAmountSnapshotInt = _accounts[msg.sender].lastStakingBalance;
@@ -309,6 +305,7 @@ contract Celery is ERC20 {
             // Notify that an Account collected a payout.
             emit CollectPayoutEvent(msg.sender, payoutAmount);
         }
+
         // Return payout amount.
         return payoutAmount;
     }
