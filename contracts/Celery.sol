@@ -29,6 +29,8 @@ contract Celery is ERC20 {
     uint8 private constant STAKE_STATUS = 1;
     uint8 private constant PAYOUT_STATUS = 0;
 
+    // APY 100% interest
+    // APR 69.314..% continously compounded interest rate
     // Interest ratee is represented as a 60.18-decimal fixed-point number
     uint256 private constant INTEREST = 693147180559945309;
     // Euler's number represented as a 60.18-decimal fixed-point number
@@ -119,6 +121,7 @@ contract Celery is ERC20 {
         // Make sure account is in payout before collecting.
         require(_isAccountInPayout(), "Account is staking.");
 
+        // Process an account payout
         uint256 payout = _processPayoutToAccount();
         require(payout > 0, "Nothing to payout.");
     }
@@ -211,8 +214,6 @@ contract Celery is ERC20 {
         // Convert seconds staked into fixed point number.
         uint256 secondsStaked = PRBMathUD60x18.fromUint(secondsStakedNorm);
 
-        // APY 100% interest
-        // APR 69.314..% continously compounded interest rate
         // Calculate the percentage of the year staked. Ex. half year = 50% = 0.5
         uint256 percentageYearStaked = PRBMathUD60x18.div(secondsStaked, PRBMathUD60x18.fromUint(SECONDS_PER_YEAR));
 
