@@ -31,9 +31,9 @@ contract Celery is ERC20 {
 
     // APY 100% interest
     // APR 69.314..% continously compounded interest rate
-    // Interest ratee is represented as a 60.18-decimal fixed-point number
+    // Interest rate is represented as a 60.18-decimal fixed-point number
     uint256 private constant INTEREST = 693147180559945309;
-    // Euler's number represented as a 60.18-decimal fixed-point number
+    // Euler's constant represented as a 60.18-decimal fixed-point number
     uint256 private constant EULER = 2718281828459045235;
 
     // Contract creation
@@ -226,7 +226,7 @@ contract Celery is ERC20 {
         // Convert staked amount into fixed point number.
         uint256 currStaked = PRBMathUD60x18.fromUint(currStakedNorm);
 
-        // Multiple compounded rate with staked amount
+        // Multiply compounded rate with staked amount
         uint256 newAmount = PRBMathUD60x18.mul(currStaked, compoundedRate);
 
         // Round up for consistency
