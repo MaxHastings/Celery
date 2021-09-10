@@ -241,17 +241,7 @@ contract Celery is ERC20 {
     /*
     Private Function
     Calculates and processes the payout back to the account address.
-    
-    Steps:
-    
-    1) Find out the length of time that has passed since the last time calculating payout for account.
-    2) Calculate the max payout amount.
-        a) Payout Percentage = Seconds Passed / Year In Seconds
-        b) Max Payout Amount = Payout Percentage * Staked Amount snapshot
-    3) Send either Max Payout Amount or Current Staked Amount whichever is smaller to the Account address.
-    4) Update Account last calculation time and subtract payout amount from account staked amount.
-
-    Returns token amount paid to account owner. Default is 0
+    Returns number of tokens paid back to account owner.
     */
     function _processPayoutToAccount() private returns (uint256) {
         // Get the latest block timestamp.
