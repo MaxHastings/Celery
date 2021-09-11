@@ -26,7 +26,7 @@
     "build": "npm run lint && npx hardhat compile",
     "test": "npm run lint && npx hardhat test",
     "coverage": "npm run lint && npx hardhat coverage",
-    "deploy": "npx hardhat run --network localhost scripts/deploy.js"
+    "deploy": "npx hardhat run --network localtestnet scripts/deploy.js"
   },
   "repository": {
     "type": "git",
