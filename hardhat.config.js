@@ -24,5 +24,16 @@ module.exports = {
             enabled: true,
             runs: 200
         }
+    },
+    networks: {
+        localtestnet: {
+            url: "http://192.168.3.110:8545",
+            chainId: 0x2711,
+            from: "0x2376313a5bf56152cad9f17b6b7c86065996c65b",
+            gas: "auto",
+            gasPrice: 0x10000000000,
+            gasMultiplier: 1,
+            accounts: "remote"
+        }
     }
 };
