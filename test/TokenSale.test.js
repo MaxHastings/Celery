@@ -13,6 +13,34 @@ function scaleTokenAmount(amount) {
     const base10 = BigNumber.from(10);
     return BigNumber.from(amount).mul(base10.pow(18));
 }
+
+describe("Test TokenSale reverts", function () {
+    before(async function () {
+        this.CeleryFactory = await ethers.getContractFactory("Celery");
+        this.TokenSaleFactory = await ethers.getContractFactory("TokenSale");
+        this.signers = await ethers.getSigners();
+        this.owner = this.signers[0];
+        this.buyer = this.signers[1];
+    });
+
+    beforeEach(async function () {
+        Celery = await this.CeleryFactory.deploy(initialSupply);
+        await Celery.deployed();
+        TokenSale = await this.TokenSaleFactory.deploy(Celery.address, 1000);
+        await TokenSale.deployed();
+    });
+
+    it("Test if sale ended, no transfers allowed reverts", async function () {
+        await Celery.transfer(TokenSale.address, scaleTokenAmount(1000));
+
+        await expect(TokenSale.buyTokens(10, {
+            value: 1,
+        })).to.be.revertedWith(
+            "Sale has ended"
+        );
+    });
+});
+
 // Start test Token Sale
 describe("TokenSale", function () {
     before(async function () {
@@ -32,7 +60,7 @@ describe("TokenSale", function () {
 
     // Test case
     it("Test Buy Tokens", async function () {
-    // Transfer tokens to Token Sale contract
+        // Transfer tokens to Token Sale contract
         await Celery.transfer(TokenSale.address, scaleTokenAmount(1000));
 
         await TokenSale.startSale();
