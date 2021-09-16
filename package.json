@@ -4,7 +4,7 @@
   "description": "",
   "main": "",
   "dependencies": {
-    "@openzeppelin/contracts": "4.3.1",
+    "@openzeppelin/contracts": "4.3.2",
     "prb-math": "2.2.0",
     "solc": "0.8.4"
   },
