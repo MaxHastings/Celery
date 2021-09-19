@@ -89,6 +89,24 @@ describe("Test Celery staking", function () {
         await Celery.deployed();
     });
 
+    it("Test interest end time", async function () {
+        var blockTime = await getLastBlockTime();
+        var endTime = blockTime + (186 * SECONDS_IN_A_YEAR);
+
+        // Check expected end time is correct
+        await expectEndInterestTime(endTime);
+
+        await Celery.increaseBalanceAndStake(1000);
+
+        // wait 1000 years staking
+        var wait = 1000 * SECONDS_IN_A_YEAR;
+
+        await increaseBlockTime(wait);
+
+        // If this runs without revert then there is no overflow
+        await Celery.startPayout();
+    });
+
     it("Test increase balance and stake event is emitted", async function () {
         await expect(Celery.increaseBalanceAndStake(1000))
             .to.emit(Celery, "IncreaseBalanceAndStakeEvent")
@@ -390,6 +408,12 @@ async function expectTokenBalance(address, amount) {
 async function expectAccountAmount(address, amount) {
     expect((await Celery.getAccountBalance(address)).toString()).to.equal(
         amount.toString()
+    );
+}
+
+async function expectEndInterestTime(time) {
+    expect((await Celery.getEndInterestTime()).toString()).to.equal(
+        time.toString()
     );
 }
 

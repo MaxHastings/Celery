@@ -43,15 +43,16 @@ contract Celery is ERC20 {
     uint256 private constant EULER = 2718281828459045235;
 
     // Contract creation
-    constructor(uint256 initialSupply) ERC20("Celery", "CLY") {
-        _mint(msg.sender, initialSupply); // Create initial supply
-        approve(msg.sender, initialSupply); //Approves the initial supply for the sender to use
+    constructor(uint256 initialSupplyNorm) ERC20("Celery", "CLY") {
+        _mint(msg.sender, initialSupplyNorm); // Create initial supply
+        approve(msg.sender, initialSupplyNorm); //Approves the initial supply for the sender to use 
 
         // Calculate the end time for when to stop interest 
-        uint256 reduMaxIntNorm = MAX_INT / initialSupply / 2 ** 60;
-        uint256 reduMaxInt = PRBMathUD60x18.fromUint(reduMaxIntNorm);
-        uint256 numberOfYears = PRBMathUD60x18.log2(reduMaxInt);
-        uint256 numberOfYearsNorm = PRBMathUD60x18.toUint(numberOfYears) + 60;
+        uint256 initialSupply = PRBMathUD60x18.fromUint(initialSupplyNorm);
+        uint256 compoundedInterest = PRBMathUD60x18.div(MAX_INT, initialSupply);
+        uint256 rateTime = PRBMathUD60x18.ln(compoundedInterest);
+        uint256 numberOfYears = PRBMathUD60x18.div(rateTime, INTEREST);
+        uint256 numberOfYearsNorm = PRBMathUD60x18.toUint(numberOfYears);
         endInterestTime = block.timestamp + (numberOfYearsNorm * SECONDS_PER_YEAR);
     }
 
