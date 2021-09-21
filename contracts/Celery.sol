@@ -217,6 +217,10 @@ contract Celery is ERC20 {
     APY = 100%
     */
     function _calculateStakedAmount() private {
+        uint256 lastProcessedTime = _accounts[msg.sender].lastProcessedTime;
+
+        // Update the time for last processed account
+        _updateProcessedTime();
 
         uint256 interestTimeStamp = block.timestamp;
         // Prevent adding interest past the end interest time. ( Stops token supply overflows )
@@ -224,14 +228,15 @@ contract Celery is ERC20 {
             interestTimeStamp = endInterestTime;
         }
 
+        if (lastProcessedTime > interestTimeStamp) {
+            return;
+        }
+
         // Calculate the number of seconds that the Account has been staking for using block time.
-        uint256 secondsStakedNorm = interestTimeStamp - _accounts[msg.sender].lastProcessedTime;
+        uint256 secondsStakedNorm = interestTimeStamp - lastProcessedTime;
 
         // Get number of tokens Account is staking.
         uint256 currStakedNorm = _getBalance();
-
-        // Update the time for last processed account
-        _updateProcessedTime();
 
         // If seconds staked is zero or currnet amount staking is zero, return early.
         if (secondsStakedNorm == 0 || currStakedNorm == 0) {

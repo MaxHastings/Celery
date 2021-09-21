@@ -105,6 +105,9 @@ describe("Test Celery staking", function () {
 
         // If this runs without revert then there is no overflow
         await Celery.startPayout();
+
+        // Increase Stake should not cause seconds staked underflow
+        await Celery.increaseBalanceAndStake(1000);
     });
 
     it("Test increase balance and stake event is emitted", async function () {
