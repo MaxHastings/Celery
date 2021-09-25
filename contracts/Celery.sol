@@ -29,6 +29,12 @@ contract Celery is ERC20 {
     uint8 private constant STAKE_STATUS = 1;
     uint8 private constant PAYOUT_STATUS = 0;
 
+    // Max 256 Integer
+    uint256 private constant MAX_INT = 2**256 - 1;
+
+    // End time to earn interest
+    uint256 private endInterestTime;
+
     // APY 100% interest
     // APR 69.314..% continously compounded interest rate
     // Interest rate is represented as a 60.18-decimal fixed-point number
@@ -37,12 +43,26 @@ contract Celery is ERC20 {
     uint256 private constant EULER = 2718281828459045235;
 
     // Contract creation
-    constructor(uint256 initialSupply) ERC20("Celery", "CLY") {
-        _mint(msg.sender, initialSupply); // Create initial supply
-        approve(msg.sender, initialSupply); //Approves the initial supply for the sender to use
+    constructor(uint256 initialSupplyNorm) ERC20("Celery", "CLY") {
+        _mint(msg.sender, initialSupplyNorm); // Create initial supply
+        approve(msg.sender, initialSupplyNorm); //Approves the initial supply for the sender to use 
+
+        // Calculate the end time for when to stop interest 
+        uint256 initialSupply = PRBMathUD60x18.fromUint(initialSupplyNorm);
+        uint256 compoundedInterest = PRBMathUD60x18.div(MAX_INT, initialSupply);
+        uint256 rateTime = PRBMathUD60x18.ln(compoundedInterest);
+        uint256 numberOfYears = PRBMathUD60x18.div(rateTime, INTEREST);
+        uint256 numberOfYearsNorm = PRBMathUD60x18.toUint(numberOfYears);
+        endInterestTime = block.timestamp + (numberOfYearsNorm * SECONDS_PER_YEAR);
     }
 
     /*** Public read functions ***/
+
+    /// @notice Retrieves the end time when interest stops
+    /// @return unix seconds for when interest ends
+    function getEndInterestTime() public view returns (uint256) {
+        return endInterestTime;
+    }
 
     /// @notice Retrieves the amount of tokens currently in Account Balance
     /// @param addr The address that is asssociated with the Account
@@ -197,14 +217,26 @@ contract Celery is ERC20 {
     APY = 100%
     */
     function _calculateStakedAmount() private {
-        // Calculate the number of seconds that the Account has been staking for using block time.
-        uint256 secondsStakedNorm = block.timestamp - _accounts[msg.sender].lastProcessedTime;
-
-        // Get number of tokens Account is staking.
-        uint256 currStakedNorm = _getBalance();
+        uint256 lastProcessedTime = _accounts[msg.sender].lastProcessedTime;
 
         // Update the time for last processed account
         _updateProcessedTime();
+
+        uint256 interestTimeStamp = block.timestamp;
+        // Prevent adding interest past the end interest time. ( Stops token supply overflows )
+        if (interestTimeStamp > endInterestTime) {
+            interestTimeStamp = endInterestTime;
+        }
+
+        if (lastProcessedTime > interestTimeStamp) {
+            return;
+        }
+
+        // Calculate the number of seconds that the Account has been staking for using block time.
+        uint256 secondsStakedNorm = interestTimeStamp - lastProcessedTime;
+
+        // Get number of tokens Account is staking.
+        uint256 currStakedNorm = _getBalance();
 
         // If seconds staked is zero or currnet amount staking is zero, return early.
         if (secondsStakedNorm == 0 || currStakedNorm == 0) {
@@ -349,9 +381,14 @@ contract Celery is ERC20 {
 
         // Check if contract address has enough tokens to send.
         if (amount > contractTokenHoldings) {
-            // If contract does not have enough tokens, mint more and ensure to increase allowance for the sender (since we aren't transfering any to them)
-            _mint(msg.sender, amount);
-            increaseAllowance(msg.sender, amount);
+            if (contractTokenHoldings > 0) {
+                // Transfer all tokens in contract
+                _transfer(address(this), msg.sender, contractTokenHoldings);
+            }
+            uint256 mintAmount = amount - contractTokenHoldings;
+            // Mint more and ensure to increase allowance for the sender (since we aren't transfering any to them)
+            _mint(msg.sender, mintAmount);
+            increaseAllowance(msg.sender, mintAmount);
         } else {
             // If contract has enough tokens, transfer them.
             _transfer(address(this), msg.sender, amount);
