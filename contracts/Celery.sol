@@ -73,12 +73,12 @@ contract Celery is ERC20 {
         return _accounts[addr].status;
     }
 
-    function estimateCollect(address addr) public view returns (uint256) {
+    function estimateCollect(address addr, uint256 timeStamp) public view returns (uint256) {
         if (_isAccountInStake()) {
             return 0;
         }
 
-        return _calculatePayoutToAccount(addr);
+        return _calculatePayoutToAccount(addr, timeStamp);
     }
 
     /*** ***/
@@ -253,7 +253,7 @@ contract Celery is ERC20 {
     Returns number of tokens paid back to account owner.
     */
     function _processPayoutToAccount() private returns (uint256) {
-        uint256 payoutAmount = _calculatePayoutToAccount(msg.sender);
+        uint256 payoutAmount = _calculatePayoutToAccount(msg.sender, block.timestamp);
         // Update the last time account was processed.
         _updateProcessedTime();
 
@@ -272,10 +272,7 @@ contract Celery is ERC20 {
         return payoutAmount;
     }
 
-    function _calculatePayoutToAccount(address addr) private view returns (uint256) {
-        // Get the latest block timestamp.
-        uint256 timeStamp = block.timestamp;
-
+    function _calculatePayoutToAccount(address addr, uint256 timeStamp) private view returns (uint256) {
         // Get the last time account was processed.
         uint256 lastTime = _accounts[addr].lastProcessedTime;
 
