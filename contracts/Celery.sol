@@ -156,7 +156,7 @@ contract Celery is ERC20 {
 
     /// @notice Force a payout amount to collect with up to a 50% penalty
     /// @param amount of tokens to collect from account
-    /// @param amountType If 0, amount to receive in wallet, if 1, amount to take from account
+    /// @param amountType If 0, amount is what you want into your wallet (post-penalty). If 1, amount is what you want to take from your account (pre-penalty)
     function forcePayout(uint256 amount, AmountType amountType) public {
         // Check if amount is greater than zero.
         require(amount > 0, "Amount must be greater than 0.");
@@ -167,28 +167,18 @@ contract Celery is ERC20 {
         // Process an account collect payout
         uint256 collectPayoutAmount = _processPayoutToAccount();
 
-        // Forced amount based on amount type
-        // If from account, we leave value as is and later penalize it at 50%,
-        // to ensure user only has this amount removed from account
-        uint256 amountFromWallet = amount;
-
-        // If to wallet, we double this amount (as it will later be penalized by 50%),
-        // to ensure user receives the amount they specifiied into their wallet
-        if (amountType == AmountType.TO_WALLET) {
-            amountFromWallet = amount * 2;
-        }
-
         // If payout amount is greater than or equal to what user wants to collect then return early.
-        if (collectPayoutAmount >= amountFromWallet) {
+        if (collectPayoutAmount >= amount) {
             return;
         }
 
         // Calculate the remaining number of tokens to force payout.
         uint256 penalizedAmountToCollect = amount - collectPayoutAmount;
 
-        // If to wallet, we double this amount (as it will later be penalized by 50%), to ensure user receives this amount into their wallet
+        // If to wallet type, we double this amount (as it will later be penalized by 50%)
+        // to ensure user receives this amount into their wallet
         if (amountType == AmountType.TO_WALLET) {
-            penalizedAmountToCollect = (amount - collectPayoutAmount) * 2;
+            penalizedAmountToCollect = (amount - collectPayoutAmount) + (amount - collectPayoutAmount);
         }
 
         // Process a force payout amount for the remainder
