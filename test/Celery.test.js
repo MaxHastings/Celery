@@ -335,7 +335,7 @@ describe("Test Celery payouts", function () {
         await expectTokenBalance(Celery.address, 0);
     });
 
-    it("Test if contract penalizes force payout by 50% (AMOUNT_TO_WALLET)", async function () {
+    it("Test if contract penalizes force payout by 50% (TO_WALLET)", async function () {
         // Wait half a year
         await increaseBlockTime(SECONDS_IN_A_YEAR / 2);
 

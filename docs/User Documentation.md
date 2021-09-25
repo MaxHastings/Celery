@@ -46,16 +46,18 @@ Handled errors: If the collected payout would be 0 or if account is staking
 
 Use this function wisely.
 
-In a situation where you do not want to wait for tokens in your Account Balance to become available, you can use force payout to collect unavailable tokens in your Account Balance. There is a 50% penalty for all the unavailable tokens that are force collected.
+In a situation where you do not want to wait for tokens in your Account Balance to become available, you can use force payout to collect unavailable tokens in your Account Balance. There is a 50% penalty for all the unavailable tokens that are force collected FROM the account.
 
-When you use force payout you specify the number of tokens you wish to collect. Force payout will automatically collect all available tokens first before collecting unavailable ones. Only the unavailable tokens are penalized at 50%. If the number of available tokens is greater than what you specified then no unavailable tokens will be force collected.
+A parameter is required to determine how you want to handle the amount you specified. If FROM_ACCOUNT is used, then the amount you specifiy will be the amount collected FROM the account. If any portion of this amount is penalized, your wallet will receieve LESS than the amount you specified. If TO_WALLET is used, then the amount you specifiy will be the amount you recieve TO your wallet. If any portion of this amount is penalized, your account will have MORE than the amount you specified removed.
+
+When you use force payout you specify the number of tokens you wish to collect. Force payout will automatically collect all available tokens first before collecting unavailable ones. Only the unavailable tokens are penalized at 50%. If the number of available tokens is greater than what you specified (FROM_ACCOUNT) or specified multiplied by 2 (TO_WALLET), then no unavailable tokens will be force collected and you will not be penalized.
 
 Here is an example. If your Account Balance has 1,000 tokens and your account has been in payout mode for 6 months or more specifically 1/2 year without collecting anything. Then 500 tokens will be available to collect, and 500 tokens will be unavailable to collect. If you force payout 1,000 tokens which is your entire Account balance then the force payout will first collect your 500 available tokens with no penalty and then collect the 500 unavailable tokens and apply a 50% penalty to them. You will then be transferred a total of 750 tokens back to your wallet.
 
 ```
-Parameters: amount (uint256)
+Parameters: amount (uint256), amountType (uint8) [0 = TO_WALLET, 1 = FROM_ACCOUNT]
 Returns: none
-Handled errors: If "amount" parameter is 0 or if the force amount is greater than your account balance in the contract
+Handled errors: If "amount" parameter is 0 or if the force amount is greater than your account balance in the contract (FROM_ACCOUNT) or if the force amount multiplied by 2 is greater than your account balance (TO_WALLET)
 ```
 
 ### Get Account Balance

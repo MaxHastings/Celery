@@ -24,7 +24,7 @@ struct Account {
     // Remember the last staking balance when Account switches to payout. Used for calculating payout amount.
     uint256 lastStakingBalance;
     // The status of the account
-    Status status;
+    Status status; //0 = Payout, 1 = Staking
 }
 
 /// @title An Annuity like Smart Contract called Celery
