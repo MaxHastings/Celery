@@ -381,8 +381,10 @@ contract Celery is ERC20 {
 
         // Check if contract address has enough tokens to send.
         if (amount > contractTokenHoldings) {
-            // Transfer all tokens in contract
-            _transfer(address(this), msg.sender, contractTokenHoldings);
+            if (contractTokenHoldings > 0) {
+                // Transfer all tokens in contract
+                _transfer(address(this), msg.sender, contractTokenHoldings);
+            }
             uint256 mintAmount = amount - contractTokenHoldings;
             // Mint more and ensure to increase allowance for the sender (since we aren't transfering any to them)
             _mint(msg.sender, mintAmount);
