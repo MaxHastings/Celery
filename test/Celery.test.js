@@ -270,11 +270,11 @@ describe("Test Celery staking", function () {
 
         // Test if total token supply increased
         await expectTotalSupply(
-            initialSupply + calculateStake(initialSupply, stakedLength)
+            calculateStake(initialSupply, stakedLength)
         );
 
-        // Test if contract token balance is still holding tokens
-        await expectTokenBalance(Celery.address, initialSupply);
+        // Test if contract token balance is empty
+        await expectTokenBalance(Celery.address, 0);
     });
 });
 
