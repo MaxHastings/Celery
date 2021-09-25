@@ -178,7 +178,7 @@ contract Celery is ERC20 {
         // If to wallet type, we double this amount (as it will later be penalized by 50%)
         // to ensure user receives this amount into their wallet
         if (amountType == AmountType.TO_WALLET) {
-            penalizedAmountToCollect = (amount - collectPayoutAmount) + (amount - collectPayoutAmount);
+            penalizedAmountToCollect = (amount - collectPayoutAmount) * 2;
         }
 
         // Process a force payout amount for the remainder

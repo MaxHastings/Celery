@@ -30,10 +30,7 @@ contract TokenSale {
     );
 
     tokensSold += amount;
-    require(
-      tokenContract.transfer(msg.sender, scaledAmount),
-      "Failed to transfer token"
-    );
+    tokenContract.transfer(msg.sender, scaledAmount);
 
     emit SoldEvent(msg.sender, amount);
   }
@@ -51,10 +48,7 @@ contract TokenSale {
     saleActive = false;
     emit EndSaleEvent();
     // Send unsold tokens to the owner.
-    require(
-      tokenContract.transfer(_owner, tokenContract.balanceOf(address(this))),
-      "Failed to transfer token"
-    );
+	tokenContract.transfer(_owner, tokenContract.balanceOf(address(this)));
 
     // Transfer currency to the owner.
     payable(msg.sender).transfer(address(this).balance);
