@@ -41,7 +41,7 @@ contract Celery is ERC20 {
     uint256 private constant MAX_INT = 2**256 - 1;
 
     // End time to earn interest
-    uint256 private endInterestTime;
+    uint256 private immutable _endInterestTime;
 
     // APY 100% interest
     // APR 69.314..% continously compounded interest rate
@@ -61,7 +61,7 @@ contract Celery is ERC20 {
         uint256 rateTime = PRBMathUD60x18.ln(compoundedInterest);
         uint256 numberOfYears = PRBMathUD60x18.div(rateTime, INTEREST);
         uint256 numberOfYearsNorm = PRBMathUD60x18.toUint(numberOfYears);
-        endInterestTime = block.timestamp + (numberOfYearsNorm * SECONDS_PER_YEAR);
+        _endInterestTime = block.timestamp + (numberOfYearsNorm * SECONDS_PER_YEAR);
     }
 
     /*** Public read functions ***/
@@ -69,7 +69,7 @@ contract Celery is ERC20 {
     /// @notice Retrieves the end time when interest stops
     /// @return unix seconds for when interest ends
     function getEndInterestTime() public view returns (uint256) {
-        return endInterestTime;
+        return _endInterestTime;
     }
 
     /// @notice Retrieves the amount of tokens currently in Account Balance
@@ -260,8 +260,8 @@ contract Celery is ERC20 {
 
         uint256 interestTimeStamp = block.timestamp;
         // Prevent adding interest past the end interest time. ( Stops token supply overflows )
-        if (interestTimeStamp > endInterestTime) {
-            interestTimeStamp = endInterestTime;
+        if (interestTimeStamp > _endInterestTime) {
+            interestTimeStamp = _endInterestTime;
         }
 
         if (lastProcessedTime > interestTimeStamp) {

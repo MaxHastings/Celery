@@ -5,10 +5,10 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract TokenSale {
     IERC20Metadata public tokenContract; // the token being sold
-    uint256 public tokenPrice; // the price, in wei, per token
+    uint256 public immutable tokenPrice; // the price, in wei, per token
     uint256 public tokensSold = 0;
     bool public saleActive = false;
-    address private _owner;
+    address private immutable _owner;
 
     constructor(IERC20Metadata _contract, uint256 price) {
         _owner = msg.sender;
