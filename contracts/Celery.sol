@@ -260,7 +260,7 @@ contract Celery is ERC20 {
         uint256 collectPayoutAmount,
         uint256 amount,
         AmountType amountType
-    ) private view returns (uint256) {
+    ) private pure returns (uint256) {
         // If payout amount is greater than or equal to what user wants to collect then return early with 0 penalty.
         if (collectPayoutAmount >= amount) {
             return 0;
