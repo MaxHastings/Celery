@@ -101,10 +101,12 @@ contract Celery is ERC20 {
         return uint8(_accounts[addr].status);
     }
 
+    /// @notice Allows you to estimate how much is available to collect from your account penalty-free at a specific point in time
+    /// @param addr The address that is asssociated with the Account
+    /// @param timeStamp The future timestamp of the planned collection time (if before payout period started, always returns 0)
+    /// @return The Celery you would collect if you executed a collect payout at the provided timestamp
     function estimateCollect(address addr, uint256 timeStamp) public view returns (uint256) {
-        if (_isAccountInStake()) {
-            return 0;
-        }
+        require(_isAccountInPayout(), "Account is staking.");
 
         return _calculatePayoutToAccount(addr, timeStamp);
     }
@@ -305,7 +307,7 @@ contract Celery is ERC20 {
         // Multiply compounded rate with staked amount
         uint256 newAmount = PRBMathUD60x18.mul(currStaked, compoundedRate);
 
-        // Round up for consistency
+        // Round up, to give user benefit of doubt with time
         uint256 newAmountCeil = PRBMathUD60x18.ceil(newAmount);
 
         // Convert new staked amount back to integer form.
@@ -344,6 +346,11 @@ contract Celery is ERC20 {
         // Get the last time account was processed.
         uint256 lastTime = _accounts[addr].lastProcessedTime;
 
+        // If timeStamp is less than last time, bad value
+        if (timeStamp < lastTime) {
+            return 0;
+        }
+
         // Calculate the number of seconds account has been in payout for.
         uint256 timePassedInSecondsInt = timeStamp - lastTime;
 
@@ -371,7 +378,7 @@ contract Celery is ERC20 {
         // Multiply percentage of year with the last staking balance to calculate max payout.
         uint256 maxPayoutAmount = PRBMathUD60x18.mul(payoutPeriodPercentage, payoutAmountSnapshot);
 
-        // Round max payout up
+        // Round up, to give user benefit of doubt with time
         uint256 maxPayoutAmountCeil = PRBMathUD60x18.ceil(maxPayoutAmount);
 
         // Convert max payout amount back to integer.

@@ -60,7 +60,7 @@ describe("Test Celery reverts", function () {
     });
 
     it("Test collect payout when account is staking reverts", async function () {
-
+        // Start Stake
         await Celery.startStake();
 
         // Collect Payout
@@ -72,6 +72,15 @@ describe("Test Celery reverts", function () {
     it("Test if force payout with zero reverts", async function () {
         await expect(Celery.forcePayout(0, 1)).to.be.revertedWith(
             "Amount must be greater than 0."
+        );
+    });
+
+    it("Test if estimate payout reverts when in stake status", async function () {
+        // Start Stake
+        await Celery.startStake();
+
+        await expect(Celery.estimateCollect(this.owner.address, 1)).to.be.revertedWith(
+            "Account is staking."
         );
     });
 });
@@ -230,6 +239,47 @@ describe("Test Celery staking", function () {
 
         // Test if token balance is 0
         await expectTokenBalance(this.owner.address, 0);
+    });
+
+    it("Test if estimate of future payout is accurate", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        // Pass by half a year;
+        const halfYearLater = await getLastBlockTime() + 15768000;
+
+        await Celery.startPayout();
+
+        // +1 added due to rounding errors when dealing with such small numbers over the course of a year (and stake does a ceil call)
+        expect((await Celery.estimateCollect(this.owner.address, halfYearLater)).toString()).to.equal(
+            ((initialSupply * 0.5) + 1).toString()
+        );
+    });
+
+    it("Test if estimate of future payout is accurate when well beyond a year", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        // Pass by year and a half;
+        const yearAndHalfLater = await getLastBlockTime() + 47304000;
+
+        await Celery.startPayout();
+
+        // +1 added due to rounding errors when dealing with such small numbers over the course of a year (and stake does a ceil call)
+        expect((await Celery.estimateCollect(this.owner.address, yearAndHalfLater)).toString()).to.equal(
+            (initialSupply + 1).toString()
+        );
+    });
+
+    it("Test if estimate of future payout is 0 when less than time snapshot", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        // Subtract half a year;
+        const halfYearEarlier = await getLastBlockTime() - 15768000;
+
+        await Celery.startPayout();
+
+        expect((await Celery.estimateCollect(this.owner.address, halfYearEarlier)).toString()).to.equal(
+            "0"
+        );
     });
 
     it("Test if contract gives back no more than entire staked amount%", async function () {
