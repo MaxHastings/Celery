@@ -10,6 +10,12 @@ enum Status {
     STAKE
 }
 
+//Amount Type
+enum AmountType {
+    TO_WALLET,
+    FROM_ACCOUNT
+}
+
 struct Account {
     // The number of tokens in the Account balance
     uint256 balance;
@@ -47,9 +53,9 @@ contract Celery is ERC20 {
     // Contract creation
     constructor(uint256 initialSupplyNorm) ERC20("Celery", "CLY") {
         _mint(msg.sender, initialSupplyNorm); // Create initial supply
-        approve(msg.sender, initialSupplyNorm); //Approves the initial supply for the sender to use 
+        approve(msg.sender, initialSupplyNorm); //Approves the initial supply for the sender to use
 
-        // Calculate the end time for when to stop interest 
+        // Calculate the end time for when to stop interest
         uint256 initialSupply = PRBMathUD60x18.fromUint(initialSupplyNorm);
         uint256 compoundedInterest = PRBMathUD60x18.div(MAX_INT, initialSupply);
         uint256 rateTime = PRBMathUD60x18.ln(compoundedInterest);
@@ -150,14 +156,15 @@ contract Celery is ERC20 {
 
     /// @notice Force a payout amount to collect with up to a 50% penalty
     /// @param amount of tokens to collect from account
-    function forcePayout(uint256 amount) public {
+    /// @param amountType If 0, amount is what you want into your wallet (post-penalty). If 1, amount is what you want to take from your account (pre-penalty)
+    function forcePayout(uint256 amount, AmountType amountType) public {
         // Check if amount is greater than zero.
         require(amount > 0, "Amount must be greater than 0.");
 
         // Start payout if not already
         _startPayout();
 
-        // Process an account payout
+        // Process an account collect payout
         uint256 collectPayoutAmount = _processPayoutToAccount();
 
         // If payout amount is greater than or equal to what user wants to collect then return early.
@@ -168,7 +175,12 @@ contract Celery is ERC20 {
         // Calculate the remaining number of tokens to force payout.
         uint256 penalizedAmountToCollect = amount - collectPayoutAmount;
 
-        // Process a force payout amount for the remainder
+        // If to wallet type, we double this amount (as it will later be penalized by 50%)
+        // to ensure user receives this amount into their wallet
+        if (amountType == AmountType.TO_WALLET) {
+            penalizedAmountToCollect *= 2;
+        }
+
         // Get Account balance
         uint256 accountBalance = _getBalance();
 
