@@ -29,7 +29,7 @@ module.exports = {
         localtestnet: {
             url: "http://192.168.3.110:8545",
             chainId: 0x2711,
-            from: "0x2376313a5bf56152cad9f17b6b7c86065996c65b",
+            from: "0x196BC2aa82988aC70EBdaa311c4768b037B7aA54",
             gas: "auto",
             gasPrice: 0x10000000000,
             gasMultiplier: 1,
