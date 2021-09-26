@@ -4,31 +4,41 @@
 
 This documentation goes over the staking and payout functionality for the Celery Smart Contract. Celery also inherits all the same functionality from ERC-20.
 
-## Public Functions
+
+## Public State Changing Functions
 
 ### Start Staking
 
 Calling this function will switch your Account to staking and will begin to earn 100% APY on your existing Account Balance. You can stake for as long or as short as you want. See [Staking](#Staking) for the exact interest formula.
 
 ```
+Function Name: startStake
 Parameters: none
 Returns: none
-Handled errors: If account is already staking
+Contract handled errors: If account is already staking
 ```
 
 ### Increase Balance And Stake
 
-Calling this function will transfer tokens from your wallet into your Account Balance, and will switch your Account to  staking if its not already. You will begin to earn 100% APY interest on your entire Account Balance right away.
+Calling this function will transfer tokens from your wallet into your Account Balance, and will switch your Account to staking if its not already. You will begin to earn 100% APY interest on your entire Account Balance right away.
 
 ```
+Function Name: increaseBalanceAndStake
 Parameters: amount (uint256)
 Returns: none
-Handled errors: If "amount" parameter is 0
+Contract handled errors: If amount parameter is 0
 ```
 
 ### Start Payout
 
 Calling this function will switch your Account to payout. Your Account Balance will slowly become available to collect, and will be fully available to collect after one year.
+
+```
+Function Name: startPayout
+Parameters: none
+Returns: none
+Contract handled errors: If account is already in payout
+```
 
 ### Collect Payout
 
@@ -37,14 +47,15 @@ Your account must be in payout before collecting. Calling this function will tra
 Here is an example. If you have 1,200 tokens in your Account Balance and you call Collect Payout once a month, or more specifically 1/12 of a year then 100 tokens will be transferred to your wallet each time for 12 months until your Account Balance reaches 0. It is important to rememeber that while your Account is in payout mode you do not earn any interest on your Account Balance.
 
 ```
+Function Name: collectPayout
 Parameters: none
 Returns: none
-Handled errors: If the collected payout would be 0 or if account is staking
+Contract handled errors: If the collected payout would be 0 or if account is staking
 ```
 
 ### Force Payout
 
-Use this function wisely.
+Use this function wisely. Your account will automatically switch to payout if it is staking when exectuted.
 
 In a situation where you do not want to wait for tokens in your Account Balance to become available, you can use force payout to collect unavailable tokens in your Account Balance. There is a 50% penalty for all the unavailable tokens that are force collected FROM the account.
 
@@ -55,18 +66,23 @@ When you use force payout you specify the number of tokens you wish to collect. 
 Here is an example. If your Account Balance has 1,000 tokens and your account has been in payout mode for 6 months or more specifically 1/2 year without collecting anything. Then 500 tokens will be available to collect, and 500 tokens will be unavailable to collect. If you force payout 1,000 tokens which is your entire Account balance then the force payout will first collect your 500 available tokens with no penalty and then collect the 500 unavailable tokens and apply a 50% penalty to them. You will then be transferred a total of 750 tokens back to your wallet.
 
 ```
+Function Name: forcePayout
 Parameters: amount (uint256), amountType (uint8) [0 = TO_WALLET, 1 = FROM_ACCOUNT]
 Returns: none
-Handled errors: If "amount" parameter is 0 or if the force amount is greater than your account balance in the contract (FROM_ACCOUNT) or if the force amount multiplied by 2 is greater than your account balance (TO_WALLET)
+Contract handled errors: If "amount" parameter is 0 or if the force amount is greater than your account balance in the contract (FROM_ACCOUNT) or if the force amount multiplied by 2 is greater than your account balance (TO_WALLET)
 ```
+
+
+## Public View Functions
 
 ### Get Account Balance
 
 Retrieves the number of tokens in the account balance for the specified wallet address.
 
 ```
+Function Name: getAccountBalance
 Parameters: address (Address)
-Returns: amount (uint256)
+Returns: Account balance (uint256)
 ```
 
 ### Get Last Processed Time
@@ -74,8 +90,9 @@ Returns: amount (uint256)
 Retrieves the last time the account has been processed for the specified wallet address. Depending on if the account is in staking mode or payout mode. This is used interenally for both calculating how much interest has been earned and to calculate the number of tokens that are available to collect.
 
 ```
+Function Name: getLastProcessedTime
 Parameters: address (Address)
-Returns: epoch time in seconds (uint256)
+Returns: Last processed time [epoch time in seconds] (uint256)
 ```
 
 ### Get Last Staking Balance
@@ -83,8 +100,9 @@ Returns: epoch time in seconds (uint256)
 Retrieves what the last staking Account Balance was before payout mode started for the specified wallet address. This is used internally for calculations to determine the number of tokens that are available to collect.
 
 ```
+Function Name: getLastStakingBalance
 Parameters: address (Address)
-Returns: amount (uint256)
+Returns: Last staking balance (uint256)
 ```
 
 ### Get Status
@@ -94,8 +112,52 @@ Retrieves what the current Account status is for the specified wallet address. R
 0 = Payout, 1 = Staking
 
 ```
+Function Name: getStatus
 Parameters: address (Address)
-Returns: status (uint8)
+Returns: Status [0 = Payout, 1 = Staking] (uint8)
+```
+
+### Get End Interest Time
+
+Retrieves the end time when interest stops. This is calculated upon contract creation and is due to the limit of the 256 bit numbers all contracts use. After this date, no more Celery can be created, which means staking stops
+
+```
+Function Name: getEndInterestTime
+Parameters: address (Address)
+Returns: End interest time [epoch time in seconds] (uint256)
+```
+
+### Estimate Collect Payout
+
+This allows you to perform an estimate on what would happen if you executed a Collect Payout at a certain point in time, assuming you stay in the payout status the entire time. Passing in a timestamp of a future date since you've started your payout will tell you how much you would received if the Collect Payout function was executed at that exact time. Running a collect/force payout or changing back into stake status after the estimate is run would require it to be run again, as it would be out of date.
+
+```
+Function Name: estimateCollect
+Parameters: address (Address), timeStamp [epoch time in seconds] (uint256)
+Returns: Estimated collect payout you would receive (uint256)
+Contract handled errors: If the timestamp provided is earlier than when the payout started, or if account is staking
+```
+
+### Estimate Stake Balance
+
+This allows you to perform an estimate on how much celery you would have at a certain point in time based on your current balance, assuming you stay in the stake status the entire time, perform no collections, and also do not deposit any more celery. If one of those things change after the estimate, it would need to be run again, as it would be out of date.
+
+```
+Function Name: estimateStakeBalance
+Parameters: address (Address), timeStamp [epoch time in seconds] (uint256)
+Returns: Estimated account balance with stake value (uint256)
+Contract handled errors: If the timestamp provided is earlier than when the staking started, or if account is in payout
+```
+
+### Estimate Force Payout Penalty Fee
+
+This allows you to perform an estimate on how much celery would be destroyed by the penalty applied to your unavailable balance upon a Force payout operation. Since a Collect payout occurs when a Force payout occurs, the penalty for a given amount decreases over time, as more of your balance becomes avaialble to you without penalty. This function assists by taking that into consideration, and will tell you how much your penalty would be for a specific amount if a Force payout was executed at a specific time. The more time that has past, the less the penalty. The penalty can also be 0 if the Collect payout covers the requested force payout balance.
+
+```
+Function Name: estimateForcePayoutPenaltyFee
+Parameters: address (Address), amount (uint256), amountType (uint8) [0 = TO_WALLET, 1 = FROM_ACCOUNT], timeStamp [epoch time in seconds] (uint256)
+Returns: Estimated Celery penalty that would be taken (uint256)
+Contract handled errors: If the timestamp provided is earlier than when the staking or payout status started, amount is 0, or the penalty is higher than what your account balance could cover at the time.
 ```
 
 ## Math

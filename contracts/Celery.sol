@@ -66,12 +66,6 @@ contract Celery is ERC20 {
 
     /*** Public read functions ***/
 
-    /// @notice Retrieves the end time when interest stops
-    /// @return unix seconds for when interest ends
-    function getEndInterestTime() public view returns (uint256) {
-        return endInterestTime;
-    }
-
     /// @notice Retrieves the amount of tokens currently in Account Balance
     /// @param addr The address that is asssociated with the Account
     /// @return amount of tokens in the Account
@@ -101,11 +95,17 @@ contract Celery is ERC20 {
         return uint8(_accounts[addr].status);
     }
 
+    /// @notice Retrieves the end time when interest stops
+    /// @return unix seconds for when interest ends
+    function getEndInterestTime() public view returns (uint256) {
+        return endInterestTime;
+    }
+
     /// @notice Allows you to estimate how much is available to collect from your account penalty-free at a specific point in time if you remain in payout status
     /// @param addr The address that is asssociated with the Account
     /// @param timeStamp The future timestamp of the planned collection time
     /// @return The Celery you would collect if you executed a collect payout at the provided timestamp
-    function estimateCollect(address addr, uint256 timeStamp) public view returns (uint256) {
+    function estimateCollectPayout(address addr, uint256 timeStamp) public view returns (uint256) {
         require(_isAccountInPayout(), "Account is staking.");
 
         // Get the last time account was processed.
@@ -120,7 +120,7 @@ contract Celery is ERC20 {
     /// @param addr The address that is asssociated with the Account
     /// @param timeStamp The future timestamp to determine how much celery you would have at that point in time
     /// @return The Celery you would have if you kept staking up until the provided timestamp
-    function estimateStake(address addr, uint256 timeStamp) public view returns (uint256) {
+    function estimateStakeBalance(address addr, uint256 timeStamp) public view returns (uint256) {
         require(_isAccountInStake(), "Account is in payout.");
 
         // Get the last time account was processed.
@@ -137,7 +137,7 @@ contract Celery is ERC20 {
     /// @param amountType If 0, amount is what you want into your wallet (post-penalty). If 1, amount is what you want to take from your account (pre-penalty)
     /// @param timeStamp The future timestamp of an estimated force penalty action
     /// @return The Celery that would be destroyed during the force payout action
-    function estimateForcePenaltyFee(
+    function estimateForcePayoutPenaltyFee(
         address addr,
         uint256 amount,
         AmountType amountType,
@@ -237,7 +237,7 @@ contract Celery is ERC20 {
 
         // Get Account balance
         uint256 accountBalance = _getBalance();
-        
+
         // Check if force payout is more than account balance
         require(penalizedAmountToCollect <= accountBalance, "Insufficient account balance.");
 
