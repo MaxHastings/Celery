@@ -101,7 +101,7 @@ contract Celery is ERC20 {
         return uint8(_accounts[addr].status);
     }
 
-    /// @notice Allows you to estimate how much is available to collect from your account penalty-free at a specific point in time
+    /// @notice Allows you to estimate how much is available to collect from your account penalty-free at a specific point in time if you remain in payout status
     /// @param addr The address that is asssociated with the Account
     /// @param timeStamp The future timestamp of the planned collection time (if before payout period started, always returns 0)
     /// @return The Celery you would collect if you executed a collect payout at the provided timestamp
@@ -109,6 +109,18 @@ contract Celery is ERC20 {
         require(_isAccountInPayout(), "Account is staking.");
 
         return _calculatePayoutToAccount(addr, timeStamp);
+    }
+
+    /// @notice Allows you to estimate how much you will earn at a specific point in time if you remain in stake status
+    /// @param addr The address that is asssociated with the Account
+    /// @param timeStamp The future timestamp of the planned collection time (if before payout period started, always returns 0)
+    /// @return The Celery you would collect if you executed a collect payout at the provided timestamp
+    function estimateStake(address addr, uint256 timeStamp) public view returns (uint256) {
+        require(_isAccountInStake(), "Account is in payout.");
+
+        uint256 lastProcessedTime = getLastProcessedTime(addr);
+
+        return _calculateStakedAmount(addr, timeStamp, lastProcessedTime);
     }
 
     /*** ***/
@@ -134,7 +146,7 @@ contract Celery is ERC20 {
         _startStake();
 
         // Calculate interest on the current staked amount before adding additional tokens.
-        _calculateStakedAmount();
+        _processStakedAmount();
 
         // Transfer additional tokens into smart contract balance.
         _transfer(msg.sender, address(this), amount);
@@ -235,7 +247,7 @@ contract Celery is ERC20 {
         }
 
         // Calculate interest on the current staked amount before switching account to payout.
-        _calculateStakedAmount();
+        _processStakedAmount();
 
         // Set Account to start payout.
         _setStatus(Status.PAYOUT);
@@ -262,31 +274,30 @@ contract Celery is ERC20 {
     APR = LN(2) = 0.69314...%
     APY = 100%
     */
-    function _calculateStakedAmount() private {
-        uint256 lastProcessedTime = _accounts[msg.sender].lastProcessedTime;
-
-        // Update the time for last processed account
-        _updateProcessedTime();
-
-        uint256 interestTimeStamp = block.timestamp;
+    function _calculateStakedAmount(
+        address addr,
+        uint256 timeStamp,
+        uint256 lastProcessedTime
+    ) private view returns (uint256) {
         // Prevent adding interest past the end interest time. ( Stops token supply overflows )
-        if (interestTimeStamp > endInterestTime) {
-            interestTimeStamp = endInterestTime;
+        if (timeStamp > endInterestTime) {
+            timeStamp = endInterestTime;
         }
 
-        if (lastProcessedTime > interestTimeStamp) {
-            return;
+        // Get number of tokens Account is staking.
+        uint256 currStakedNorm = _getBalanceFromAddress(addr);
+
+        // If time stamp provided is earlier than when stake started, return account balance.
+        if (lastProcessedTime > timeStamp) {
+            return currStakedNorm;
         }
 
         // Calculate the number of seconds that the Account has been staking for using block time.
-        uint256 secondsStakedNorm = interestTimeStamp - lastProcessedTime;
+        uint256 secondsStakedNorm = timeStamp - lastProcessedTime;
 
-        // Get number of tokens Account is staking.
-        uint256 currStakedNorm = _getBalance();
-
-        // If seconds staked is zero or currnet amount staking is zero, return early.
+        // If seconds staked is zero or currnet amount staking is zero, return account balance.
         if (secondsStakedNorm == 0 || currStakedNorm == 0) {
-            return;
+            return currStakedNorm;
         }
 
         // Convert seconds staked into fixed point number.
@@ -313,8 +324,21 @@ contract Celery is ERC20 {
         // Convert new staked amount back to integer form.
         uint256 newAmountInt = PRBMathUD60x18.toUint(newAmountCeil);
 
-        // Set new staked amount
-        _setBalance(newAmountInt);
+        return newAmountInt;
+    }
+
+    function _processStakedAmount() private {
+        uint256 lastProcessedTime = getLastProcessedTime(msg.sender);
+
+        // Update the time for last processed account
+        _updateProcessedTime();
+
+        uint256 newAmountInt = _calculateStakedAmount(msg.sender, block.timestamp, lastProcessedTime);
+
+        if (newAmountInt > 0) {
+            // Set new staked amount
+            _setBalance(newAmountInt);
+        }
     }
 
     /*
@@ -358,7 +382,7 @@ contract Celery is ERC20 {
         uint256 accountBalance = _getBalance();
 
         // Get Account last staking balance.
-        uint256 payoutAmountSnapshotInt = _accounts[addr].lastStakingBalance;
+        uint256 payoutAmountSnapshotInt = getLastStakingBalance(addr);
 
         // Convert Account last staking balance into fixed point decimal.
         uint256 payoutAmountSnapshot = PRBMathUD60x18.fromUint(payoutAmountSnapshotInt);
@@ -454,6 +478,10 @@ contract Celery is ERC20 {
 
     function _getBalance() private view returns (uint256) {
         return _accounts[msg.sender].balance;
+    }
+
+    function _getBalanceFromAddress(address addr) private view returns (uint256) {
+        return _accounts[addr].balance;
     }
 
     function _setStatus(Status status) private {

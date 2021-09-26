@@ -83,6 +83,12 @@ describe("Test Celery reverts", function () {
             "Account is staking."
         );
     });
+
+    it("Test if estimate stake reverts when in payout status", async function () {
+        await expect(Celery.estimateStake(this.owner.address, 1)).to.be.revertedWith(
+            "Account is in payout."
+        );
+    });
 });
 
 describe("Test Celery staking", function () {
@@ -279,6 +285,30 @@ describe("Test Celery staking", function () {
 
         expect((await Celery.estimateCollect(this.owner.address, halfYearEarlier)).toString()).to.equal(
             "0"
+        );
+    });
+
+    it("Test if estimate of future stake balance is accurate", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        // Pass by half a year;
+        const halfYear = 15768000;
+        const halfYearLater = (await Celery.getLastProcessedTime(this.owner.address)).add(halfYear);
+
+        expect((await Celery.estimateStake(this.owner.address, halfYearLater.toString())).toString()).to.equal(
+            calculateStake(initialSupply, halfYear).toString()
+        );
+    });
+
+    it("Test if estimate of future stake is same as balance when less than time snapshot", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        // Pass by half a year;
+        const halfYear = 15768000;
+        const halfYearEarlier = (await Celery.getLastProcessedTime(this.owner.address)).sub(halfYear);
+
+        expect((await Celery.estimateStake(this.owner.address, halfYearEarlier.toString())).toString()).to.equal(
+            calculateStake(initialSupply, 0).toString()
         );
     });
 
