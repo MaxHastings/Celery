@@ -72,6 +72,18 @@ Returns: none
 Contract handled errors: If "amount" parameter is 0 or if the force amount is greater than your account balance in the contract (FROM_ACCOUNT) or if the force amount multiplied by 2 is greater than your account balance (TO_WALLET)
 ```
 
+### Force Payout All
+
+Use this function wisely. Your account will automatically switch to payout if it is staking when exectuted.
+
+This function allows you to empty your entire account from the contract and back into you wallet, with up to a 50% penalty on any value after collect payout has run. This function has been added because with the Force Payout function above, you are chasing time on the penalty (which decreases with time), so there will always be some left over Celery in the account. While a Collect Payout could be run shortly after this to retrieve the remaining balance, this allows the operation to be done in one transaction.
+
+```
+Function Name: forcePayoutAll
+Parameters: none
+Returns: none
+```
+
 
 ## Public View Functions
 
@@ -158,6 +170,17 @@ Function Name: estimateForcePayoutPenaltyFee
 Parameters: address (Address), amount (uint256), amountType (uint8) [0 = TO_WALLET, 1 = FROM_ACCOUNT], timeStamp [epoch time in seconds] (uint256)
 Returns: Estimated Celery penalty that would be taken (uint256)
 Contract handled errors: If the timestamp provided is earlier than when the staking or payout status started, amount is 0, or the penalty is higher than what your account balance could cover at the time.
+```
+
+### Estimate Force Payout All Penalty Fee
+
+This allows you to perform an estimate on how much celery would be destroyed by the penalty applied to your unavailable balance upon a Force payout all operation. Since a Collect payout occurs when a Force payout all occurs, the penalty for a given amount decreases over time, as more of your balance becomes avaialble to you without penalty. This function assists by taking that into consideration, and will tell you how much your penalty would be if a Force payout all (where your entire account balance is withdrawn) was executed at a specific time. The more time that has past, the less the penalty. The penalty can also be 0 if the Collect payout covers the requested force payout all balance.
+
+```
+Function Name: estimateForcePayoutAllPenaltyFee
+Parameters: address (Address), timeStamp [epoch time in seconds] (uint256)
+Returns: Estimated Celery penalty that would be taken (uint256)
+Contract handled errors: If the timestamp provided is earlier than when the staking or payout status started
 ```
 
 ## Math
