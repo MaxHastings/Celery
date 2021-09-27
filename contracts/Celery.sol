@@ -167,32 +167,6 @@ contract Celery is ERC20 {
         return penaltyAmount;
     }
 
-    /// @notice Allows you to estimate how much of a penalty will be taken against your account based on withdrawing your entire account balance at the future timestamp you pass in
-    /// @param addr The address that is asssociated with the Account
-    /// @param timeStamp The future timestamp of an estimated force payout all penalty action
-    /// @return The Celery that would be destroyed during the force payout all action
-    function estimateForcePayoutAllPenaltyFee(
-        address addr,
-        uint256 timeStamp
-    ) public view returns (uint256) {
-        // Get the last time account was processed.
-        uint256 lastProcessedTime = getLastProcessedTime(addr);
-
-        require(timeStamp >= lastProcessedTime, "Timestamp too early.");
-
-        uint256 accountBalance = getAccountBalance(addr);
-
-        // Calculate an account collect payout
-        uint256 collectPayoutAmount = _calculatePayoutToAccount(addr, timeStamp);
-
-        uint256 penalizedAmountToCollect = _calculatePenalty(collectPayoutAmount, accountBalance, AmountType.FROM_ACCOUNT);
-
-        // Apply 50% penalty to payout amount (which in turn gives us the penalty itself)
-        uint256 penaltyAmount = penalizedAmountToCollect / 2;
-
-        return penaltyAmount;
-    }
-
     /*** ***/
 
     /*** Public write functions ***/
@@ -285,38 +259,6 @@ contract Celery is ERC20 {
 
         // Notify that an account forced payout with amount.
         emit ForcePayoutEvent(msg.sender, forcePayoutAmount);
-    }
-
-    /// @notice Force a payout of your entire account balance with up to a 50% penalty depending on the collect payout that runs first. This will empty the contract of all of your Celery and you will receive what is left after the penalty into your wallet
-    function forcePayoutAll() public {
-        // Start payout if not already
-        _startPayout();
-
-        // Process an account collect payout
-        _processPayoutToAccount();
-
-        // Get Account balance after collect
-        uint256 remainingAccountBalance = _getBalance();
-
-        // Nothing else in account, return (collect payout covered the entire account balance)
-        if (remainingAccountBalance == 0) {
-            return;
-        }
-
-        // Set account balance to 0
-        _setBalance(0);
-
-        // Update last time processsed account
-        _updateProcessedTime();
-
-        // Apply 50% penalty to payout amount
-        uint256 forcePayoutAmount = remainingAccountBalance / 2;
-
-        // Send payout.
-        _payoutAmountToAccount(forcePayoutAmount);
-
-        // Notify that an account forced payout with amount.
-        emit ForcePayoutAllEvent(msg.sender, forcePayoutAmount);
     }
 
     function _calculatePenalty(
@@ -559,9 +501,6 @@ contract Celery is ERC20 {
     }
 
     /*** Events ***/
-    // Event that an account forced payout with a penalty (entire account balance)
-    event ForcePayoutAllEvent(address _address, uint256 _amount);
-
     // Event that an account forced payout with a penalty
     event ForcePayoutEvent(address _address, uint256 _amount);
 

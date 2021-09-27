@@ -149,17 +149,6 @@ describe("Test Celery reverts", function () {
             "Timestamp too early."
         );
     });
-
-    it("Test if estimate force payout all reverts when less than time snapshot", async function () {
-        await Celery.increaseBalanceAndStake(initialSupply);
-
-        // Subtract half a year;
-        const tooEarly = await getLastBlockTime() - 1;
-
-        await expect(Celery.estimateForcePayoutAllPenaltyFee(this.owner.address, tooEarly)).to.be.revertedWith(
-            "Timestamp too early."
-        );
-    });
 });
 
 describe("Test Celery staking", function () {
@@ -375,22 +364,6 @@ describe("Test Celery staking", function () {
         );
     });
 
-    it("Test if estimate of force payout all penalty is accurate", async function () {
-        await Celery.increaseBalanceAndStake(initialSupply);
-
-        await Celery.startPayout();
-
-        // Pass by half a year;
-        const halfYearLater = await getLastBlockTime() + 15768000;
-
-        // Expected amount based on penalty of 50% (We take 50% first because that's what is unavaialble, and 50% of that would be the fee)
-        const penaltyAmount = (initialSupply * 0.5) * 0.5;
-
-        await expect((await Celery.estimateForcePayoutAllPenaltyFee(this.owner.address, halfYearLater)).toString()).to.equal(
-            penaltyAmount.toString()
-        );
-    });
-
     it("Test if estimate of force payout penalty is accurate (TO_WALLET)", async function () {
         await Celery.increaseBalanceAndStake(initialSupply);
 
@@ -512,24 +485,6 @@ describe("Test Celery payouts", function () {
         await expectTokenBalance(Celery.address, 0);
     });
 
-    it("Test if contract penalizes force payout all by 50%", async function () {
-        // Wait half a year
-        await increaseBlockTime(SECONDS_IN_A_YEAR / 2);
-
-        // Collect a force payout for entire account balance
-        await Celery.forcePayoutAll();
-
-        // Test if owner token balance received 75% of staked tokens. 
-        // Half of tokens penalized by 50% and half not penalized since account spent half a year in payout.
-        await expectTokenBalance(this.owner.address, initialSupply * 0.75);
-
-        // Test if account staked balance is set back to 0
-        await expectAccountAmount(this.owner.address, 0);
-
-        // Test if contract token balance is subtracted
-        await expectTokenBalance(Celery.address, 0);
-    });
-
     it("Test if contract penalizes force payout by 50% (TO_WALLET)", async function () {
         // Wait half a year
         await increaseBlockTime(SECONDS_IN_A_YEAR / 2);
@@ -593,15 +548,6 @@ describe("Test Celery payouts", function () {
             .withArgs(this.owner.address, 250);
     });
 
-    it("Test Force Payout All event is emitted", async function () {
-        // Wait half year
-        await increaseBlockTime(SECONDS_IN_A_YEAR / 2);
-
-        await expect(Celery.forcePayoutAll())
-            .to.emit(Celery, "ForcePayoutAllEvent")
-            .withArgs(this.owner.address, 250);
-    });
-
     it("Test Collect Payout 10 times in one year", async function () {
         var stakedAmount = 1000;
         var increments = 10;
@@ -626,15 +572,6 @@ describe("Test Celery payouts", function () {
         await increaseBlockTime(SECONDS_IN_A_YEAR);
 
         await Celery.forcePayout(1000, 1);
-
-        // Expect to receive full amount with no penalty since one year has passed.
-        await expectTokenBalance(this.owner.address, 1000);
-    });
-
-    it("Test if Force Payout All has no penalty if payout period is over", async function () {
-        await increaseBlockTime(SECONDS_IN_A_YEAR);
-
-        await Celery.forcePayoutAll();
 
         // Expect to receive full amount with no penalty since one year has passed.
         await expectTokenBalance(this.owner.address, 1000);
