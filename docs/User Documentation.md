@@ -121,44 +121,6 @@ Returns: Status [0 = Payout, 1 = Staking] (uint8)
 
 Retrieves the end time when interest stops. This is calculated upon contract creation and is due to the limit of the 256 bit numbers all contracts use. After this date, no more Celery can be created, which means staking stops
 
-```
-Function Name: getEndInterestTime
-Parameters: address (Address)
-Returns: End interest time [epoch time in seconds] (uint256)
-```
-
-### Estimate Collect Payout
-
-This allows you to perform an estimate on what would happen if you executed a Collect Payout at a certain point in time, assuming you stay in the payout status the entire time. Passing in a timestamp of a future date since you've started your payout will tell you how much you would received if the Collect Payout function was executed at that exact time. Running a collect/force payout or changing back into stake status after the estimate is run would require it to be run again, as it would be out of date.
-
-```
-Function Name: estimateCollect
-Parameters: address (Address), timeStamp [epoch time in seconds] (uint256)
-Returns: Estimated collect payout you would receive (uint256)
-Contract handled errors: If the timestamp provided is earlier than when the payout started, or if account is staking
-```
-
-### Estimate Stake Balance
-
-This allows you to perform an estimate on how much celery you would have at a certain point in time based on your current balance, assuming you stay in the stake status the entire time, perform no collections, and also do not deposit any more celery. If one of those things change after the estimate, it would need to be run again, as it would be out of date.
-
-```
-Function Name: estimateStakeBalance
-Parameters: address (Address), timeStamp [epoch time in seconds] (uint256)
-Returns: Estimated account balance with stake value (uint256)
-Contract handled errors: If the timestamp provided is earlier than when the staking started, or if account is in payout
-```
-
-### Estimate Force Payout Penalty Fee
-
-This allows you to perform an estimate on how much celery would be destroyed by the penalty applied to your unavailable balance upon a Force payout operation. Since a Collect payout occurs when a Force payout occurs, the penalty for a given amount decreases over time, as more of your balance becomes avaialble to you without penalty. This function assists by taking that into consideration, and will tell you how much your penalty would be for a specific amount if a Force payout was executed at a specific time. The more time that has past, the less the penalty. The penalty can also be 0 if the Collect payout covers the requested force payout balance.
-
-```
-Function Name: estimateForcePayoutPenaltyFee
-Parameters: address (Address), amount (uint256), amountType (uint8) [0 = TO_WALLET, 1 = FROM_ACCOUNT], timeStamp [epoch time in seconds] (uint256)
-Returns: Estimated Celery penalty that would be taken (uint256)
-Contract handled errors: If the timestamp provided is earlier than when the staking or payout status started, amount is 0, or the penalty is higher than what your account balance could cover at the time.
-```
 
 ## Math
 
