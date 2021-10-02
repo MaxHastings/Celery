@@ -252,22 +252,25 @@ contract Celery is ERC20 {
     APR = LN(2) = 0.69314...%
     APY = 100%
     */
-    function _calculateStakedAmount(
-        address addr,
-        uint256 timeStamp,
-        uint256 lastProcessedTime
-    ) private view returns (uint256) {
+    function _processStakedAmount() private {
+        uint256 lastProcessedTime = getLastProcessedTime(msg.sender);
+
+        // Update the time for last processed account
+        _updateProcessedTime();
+
+        uint256 timeStamp = block.timestamp;
+
         // Prevent adding interest past the end interest time. ( Stops token supply overflows )
         if (timeStamp > _endInterestTime) {
             timeStamp = _endInterestTime;
         }
 
         // Get number of tokens Account is staking.
-        uint256 currStakedNorm = getAccountBalance(addr);
+        uint256 currStakedNorm = getAccountBalance(msg.sender);
 
         // If time stamp provided is earlier than when stake started, return account balance.
         if (lastProcessedTime > timeStamp) {
-            return currStakedNorm;
+            return;
         }
 
         // Calculate the number of seconds that the Account has been staking for using block time.
@@ -275,7 +278,7 @@ contract Celery is ERC20 {
 
         // If seconds staked is zero or currnet amount staking is zero, return account balance.
         if (secondsStakedNorm == 0 || currStakedNorm == 0) {
-            return currStakedNorm;
+            return;
         }
 
         // Convert seconds staked into fixed point number.
@@ -302,21 +305,8 @@ contract Celery is ERC20 {
         // Convert new staked amount back to integer form.
         uint256 newAmountInt = PRBMathUD60x18.toUint(newAmountCeil);
 
-        return newAmountInt;
-    }
-
-    function _processStakedAmount() private {
-        uint256 lastProcessedTime = getLastProcessedTime(msg.sender);
-
-        // Update the time for last processed account
-        _updateProcessedTime();
-
-        uint256 newAmountInt = _calculateStakedAmount(msg.sender, block.timestamp, lastProcessedTime);
-
-        if (newAmountInt > 0) {
-            // Set new staked amount
-            _setBalance(newAmountInt);
-        }
+        // Set new staked amount
+        _setBalance(newAmountInt);
     }
 
     /*
@@ -325,37 +315,17 @@ contract Celery is ERC20 {
     Returns number of tokens paid back to account owner.
     */
     function _processPayoutToAccount() private returns (uint256) {
-        uint256 payoutAmount = _calculatePayoutToAccount(msg.sender, block.timestamp);
-        // Update the last time account was processed.
-        _updateProcessedTime();
-
-        if (payoutAmount > 0) {
-            // Send token payout.
-            _payoutAmountToAccount(payoutAmount);
-
-            // Subtract payout amount from Account balance.
-            _accounts[msg.sender].balance -= payoutAmount;
-
-            // Notify that an Account collected a payout.
-            emit CollectPayoutEvent(msg.sender, payoutAmount);
-        }
-
-        // Return payout amount.
-        return payoutAmount;
-    }
-
-    function _calculatePayoutToAccount(address addr, uint256 timeStamp) private view returns (uint256) {
         // Get the last time account was processed.
-        uint256 lastTime = getLastProcessedTime(addr);
+        uint256 lastTime = getLastProcessedTime(msg.sender);
 
         // Calculate the number of seconds account has been in payout for.
-        uint256 timePassedInSecondsInt = timeStamp - lastTime;
+        uint256 timePassedInSecondsInt = block.timestamp - lastTime;
 
         // Get the amount of tokens in Account balance.
         uint256 accountBalance = _getBalance();
 
         // Get Account last staking balance.
-        uint256 payoutAmountSnapshotInt = getLastStakingBalance(addr);
+        uint256 payoutAmountSnapshotInt = getLastStakingBalance(msg.sender);
 
         // Convert Account last staking balance into fixed point decimal.
         uint256 payoutAmountSnapshot = PRBMathUD60x18.fromUint(payoutAmountSnapshotInt);
@@ -392,6 +362,21 @@ contract Celery is ERC20 {
             payoutAmount = maxPayoutAmountInt;
         }
 
+        // Update the last time account was processed.
+        _updateProcessedTime();
+
+        if (payoutAmount > 0) {
+            // Send token payout.
+            _payoutAmountToAccount(payoutAmount);
+
+            // Subtract payout amount from Account balance.
+            _accounts[msg.sender].balance -= payoutAmount;
+
+            // Notify that an Account collected a payout.
+            emit CollectPayoutEvent(msg.sender, payoutAmount);
+        }
+
+        // Return payout amount.
         return payoutAmount;
     }
 
