@@ -265,19 +265,19 @@ contract Celery is ERC20 {
             timeStamp = _endInterestTime;
         }
 
-        // Get number of tokens Account is staking.
-        uint256 currStakedNorm = getAccountBalance(msg.sender);
-
-        // If time stamp provided is earlier than when stake started, return account balance.
-        if (lastProcessedTime > timeStamp) {
+        // If last processed time is equal to or greater than current time, return account balance.
+        if (lastProcessedTime >= timeStamp) {
             return;
         }
 
         // Calculate the number of seconds that the Account has been staking for using block time.
         uint256 secondsStakedNorm = timeStamp - lastProcessedTime;
 
-        // If seconds staked is zero or currnet amount staking is zero, return account balance.
-        if (secondsStakedNorm == 0 || currStakedNorm == 0) {
+        // Get number of tokens Account is staking.
+        uint256 currStakedNorm = getAccountBalance(msg.sender);
+
+        // If currnet amount staking is zero, return account balance.
+        if (currStakedNorm == 0) {
             return;
         }
 

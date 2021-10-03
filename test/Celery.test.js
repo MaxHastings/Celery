@@ -89,6 +89,16 @@ describe("Test Celery staking", function () {
         await Celery.deployed();
     });
 
+    it("Test staking with 0 account balance", async function () {
+
+        await Celery.startStake();
+
+        await Celery.startPayout();
+
+        await expectAccountAmount(this.owner.address, 0);
+        
+    });
+
     it("Test interest end time", async function () {
         var blockTime = await getLastBlockTime();
         var endTime = blockTime + (186 * SECONDS_IN_A_YEAR);
