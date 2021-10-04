@@ -60,7 +60,7 @@ describe("Test Celery reverts", function () {
     });
 
     it("Test collect payout when account is staking reverts", async function () {
-
+        // Start Stake
         await Celery.startStake();
 
         // Collect Payout
@@ -87,6 +87,16 @@ describe("Test Celery staking", function () {
     beforeEach(async function () {
         Celery = await this.CeleryFactory.deploy(initialSupply);
         await Celery.deployed();
+    });
+
+    it("Test staking with 0 account balance", async function () {
+
+        await Celery.startStake();
+
+        await Celery.startPayout();
+
+        await expectAccountAmount(this.owner.address, 0);
+        
     });
 
     it("Test interest end time", async function () {
@@ -438,43 +448,43 @@ function calculateStake(amount, stakedTime) {
 // *** Expect Functions *** //
 
 async function expectTokenBalance(address, amount) {
-    expect((await Celery.balanceOf(address)).toString()).to.equal(
+    await expect((await Celery.balanceOf(address)).toString()).to.equal(
         amount.toString()
     );
 }
 
 async function expectAccountAmount(address, amount) {
-    expect((await Celery.getAccountBalance(address)).toString()).to.equal(
+    await expect((await Celery.getAccountBalance(address)).toString()).to.equal(
         amount.toString()
     );
 }
 
 async function expectEndInterestTime(time) {
-    expect((await Celery.getEndInterestTime()).toString()).to.equal(
+    await expect((await Celery.getEndInterestTime()).toString()).to.equal(
         time.toString()
     );
 }
 
 async function expectLastStakedBalance(address, amount) {
-    expect((await Celery.getLastStakingBalance(address)).toString()).to.equal(
+    await expect((await Celery.getLastStakingBalance(address)).toString()).to.equal(
         amount.toString()
     );
 }
 
 async function expectLastProcessedTime(address, time) {
-    expect((await Celery.getLastProcessedTime(address)).toString()).to.equal(
+    await expect((await Celery.getLastProcessedTime(address)).toString()).to.equal(
         time.toString()
     );
 }
 
 async function expectStatus(address, status) {
-    expect((await Celery.getStatus(address)).toString()).to.equal(
+    await expect((await Celery.getStatus(address)).toString()).to.equal(
         status.toString()
     );
 }
 
 async function expectTotalSupply(amount) {
-    expect((await Celery.totalSupply()).toString()).to.equal(amount.toString());
+    await expect((await Celery.totalSupply()).toString()).to.equal(amount.toString());
 }
 
 async function getLastBlockTime() {

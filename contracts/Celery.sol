@@ -66,12 +66,6 @@ contract Celery is ERC20 {
 
     /*** Public read functions ***/
 
-    /// @notice Retrieves the end time when interest stops
-    /// @return unix seconds for when interest ends
-    function getEndInterestTime() public view returns (uint256) {
-        return _endInterestTime;
-    }
-
     /// @notice Retrieves the amount of tokens currently in Account Balance
     /// @param addr The address that is asssociated with the Account
     /// @return amount of tokens in the Account
@@ -101,6 +95,12 @@ contract Celery is ERC20 {
         return uint8(_accounts[addr].status);
     }
 
+    /// @notice Retrieves the end time when interest stops
+    /// @return unix seconds for when interest ends
+    function getEndInterestTime() public view returns (uint256) {
+        return _endInterestTime;
+    }
+
     /*** ***/
 
     /*** Public write functions ***/
@@ -124,7 +124,7 @@ contract Celery is ERC20 {
         _startStake();
 
         // Calculate interest on the current staked amount before adding additional tokens.
-        _calculateStakedAmount();
+        _processStakedAmount();
 
         // Transfer additional tokens into smart contract balance.
         _transfer(msg.sender, address(this), amount);
@@ -167,7 +167,7 @@ contract Celery is ERC20 {
         // Process an account collect payout
         uint256 collectPayoutAmount = _processPayoutToAccount();
 
-        // If payout amount is greater than or equal to what user wants to collect then return early.
+        // If payout amount is greater than or equal to what user wants to collect then return early with 0 penalty.
         if (collectPayoutAmount >= amount) {
             return;
         }
@@ -184,8 +184,8 @@ contract Celery is ERC20 {
         // Get Account balance
         uint256 accountBalance = _getBalance();
 
-        // Check if force payout of more than account balancee
-        require(penalizedAmountToCollect <= accountBalance, "Insufficient account balance");
+        // Check if force payout is more than account balance
+        require(penalizedAmountToCollect <= accountBalance, "Insufficient account balance.");
 
         // Subtract amount collected from account balance
         _setBalance(accountBalance - penalizedAmountToCollect);
@@ -225,7 +225,7 @@ contract Celery is ERC20 {
         }
 
         // Calculate interest on the current staked amount before switching account to payout.
-        _calculateStakedAmount();
+        _processStakedAmount();
 
         // Set Account to start payout.
         _setStatus(Status.PAYOUT);
@@ -252,30 +252,32 @@ contract Celery is ERC20 {
     APR = LN(2) = 0.69314...%
     APY = 100%
     */
-    function _calculateStakedAmount() private {
-        uint256 lastProcessedTime = _accounts[msg.sender].lastProcessedTime;
+    function _processStakedAmount() private {
+        uint256 lastProcessedTime = getLastProcessedTime(msg.sender);
 
         // Update the time for last processed account
         _updateProcessedTime();
 
-        uint256 interestTimeStamp = block.timestamp;
+        uint256 timeStamp = block.timestamp;
+
         // Prevent adding interest past the end interest time. ( Stops token supply overflows )
-        if (interestTimeStamp > _endInterestTime) {
-            interestTimeStamp = _endInterestTime;
+        if (timeStamp > _endInterestTime) {
+            timeStamp = _endInterestTime;
         }
 
-        if (lastProcessedTime > interestTimeStamp) {
+        // If last processed time is equal to or greater than current time, return account balance.
+        if (lastProcessedTime >= timeStamp) {
             return;
         }
 
         // Calculate the number of seconds that the Account has been staking for using block time.
-        uint256 secondsStakedNorm = interestTimeStamp - lastProcessedTime;
+        uint256 secondsStakedNorm = timeStamp - lastProcessedTime;
 
         // Get number of tokens Account is staking.
-        uint256 currStakedNorm = _getBalance();
+        uint256 currStakedNorm = getAccountBalance(msg.sender);
 
-        // If seconds staked is zero or currnet amount staking is zero, return early.
-        if (secondsStakedNorm == 0 || currStakedNorm == 0) {
+        // If currnet amount staking is zero, return account balance.
+        if (currStakedNorm == 0) {
             return;
         }
 
@@ -297,7 +299,7 @@ contract Celery is ERC20 {
         // Multiply compounded rate with staked amount
         uint256 newAmount = PRBMathUD60x18.mul(currStaked, compoundedRate);
 
-        // Round up for consistency
+        // Round up, to give user benefit of doubt with time
         uint256 newAmountCeil = PRBMathUD60x18.ceil(newAmount);
 
         // Convert new staked amount back to integer form.
@@ -313,23 +315,17 @@ contract Celery is ERC20 {
     Returns number of tokens paid back to account owner.
     */
     function _processPayoutToAccount() private returns (uint256) {
-        // Get the latest block timestamp.
-        uint256 timeStamp = block.timestamp;
-
         // Get the last time account was processed.
-        uint256 lastTime = _accounts[msg.sender].lastProcessedTime;
+        uint256 lastTime = getLastProcessedTime(msg.sender);
 
         // Calculate the number of seconds account has been in payout for.
-        uint256 timePassedInSecondsInt = timeStamp - lastTime;
+        uint256 timePassedInSecondsInt = block.timestamp - lastTime;
 
         // Get the amount of tokens in Account balance.
         uint256 accountBalance = _getBalance();
 
-        // Update the last time account was processed.
-        _updateProcessedTime();
-
         // Get Account last staking balance.
-        uint256 payoutAmountSnapshotInt = _accounts[msg.sender].lastStakingBalance;
+        uint256 payoutAmountSnapshotInt = getLastStakingBalance(msg.sender);
 
         // Convert Account last staking balance into fixed point decimal.
         uint256 payoutAmountSnapshot = PRBMathUD60x18.fromUint(payoutAmountSnapshotInt);
@@ -349,7 +345,7 @@ contract Celery is ERC20 {
         // Multiply percentage of year with the last staking balance to calculate max payout.
         uint256 maxPayoutAmount = PRBMathUD60x18.mul(payoutPeriodPercentage, payoutAmountSnapshot);
 
-        // Round max payout up
+        // Round up, to give user benefit of doubt with time
         uint256 maxPayoutAmountCeil = PRBMathUD60x18.ceil(maxPayoutAmount);
 
         // Convert max payout amount back to integer.
@@ -365,6 +361,9 @@ contract Celery is ERC20 {
             // Choose Max Payout Amount if it is smaller.
             payoutAmount = maxPayoutAmountInt;
         }
+
+        // Update the last time account was processed.
+        _updateProcessedTime();
 
         if (payoutAmount > 0) {
             // Send token payout.
