@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "prb-math/contracts/PRBMathUD60x18.sol";
 
 // Each account can be in one status, payout or stake
-enum Status {
+enum AccountStatus {
     PAYOUT,
     STAKE
 }
@@ -29,7 +29,7 @@ struct Account {
     // Remember the last staking balance when Account switches to payout. Used for calculating payout amount.
     uint256 lastStakingBalance;
     // The status of the account
-    Status status; //0 = Payout, 1 = Staking
+    AccountStatus status; //0 = Payout, 1 = Staking
 }
 
 /// @title An Annuity like Smart Contract called Celery
@@ -224,10 +224,10 @@ contract Celery is ERC20 {
         _processPayoutToAccount();
 
         // Set Account to start staking.
-        _setStatus(Status.STAKE);
+        _setStatus(AccountStatus.STAKE);
 
         // Notify that account status is now staking
-        emit AccountStatusEvent(msg.sender, Status.STAKE);
+        emit AccountStatusEvent(msg.sender, uint8(AccountStatus.STAKE));
     }
 
     function _startPayout() private {
@@ -240,10 +240,10 @@ contract Celery is ERC20 {
         _processStakedAmount();
 
         // Set Account to start payout.
-        _setStatus(Status.PAYOUT);
+        _setStatus(AccountStatus.PAYOUT);
 
         // Notify that account status is now paying out
-        emit AccountStatusEvent(msg.sender, Status.PAYOUT);
+        emit AccountStatusEvent(msg.sender, uint8(AccountStatus.PAYOUT));
 
         // Remember last staking balance. Used later for calculating payout amount.
         uint256 currStakedNorm = _getBalance();
@@ -422,14 +422,14 @@ contract Celery is ERC20 {
     }
 
     function _isAccountInPayout() private view returns (bool) {
-        return _getStatus() == Status.PAYOUT;
+        return _getStatus() == AccountStatus.PAYOUT;
     }
 
     function _isAccountInStake() private view returns (bool) {
-        return _getStatus() == Status.STAKE;
+        return _getStatus() == AccountStatus.STAKE;
     }
 
-    function _getStatus() private view returns (Status) {
+    function _getStatus() private view returns (AccountStatus) {
         return _accounts[msg.sender].status;
     }
 
@@ -437,7 +437,7 @@ contract Celery is ERC20 {
         return _accounts[msg.sender].balance;
     }
 
-    function _setStatus(Status status) private {
+    function _setStatus(AccountStatus status) private {
         _accounts[msg.sender].status = status;
     }
 
@@ -459,7 +459,7 @@ contract Celery is ERC20 {
     event IncreaseBalanceAndStakeEvent(address _address, uint256 _amount);
 
     // Event that an account status has been changed.
-    event AccountStatusEvent(address _address, Status _value);
+    event AccountStatusEvent(address _address, uint8 _value);
 
     /*** ***/
 }
