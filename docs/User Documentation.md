@@ -122,6 +122,22 @@ Returns: Status [0 = Payout, 1 = Staking] (uint8)
 Retrieves the end time when interest stops. This is calculated upon contract creation and is due to the limit of the 256 bit numbers all contracts use. After this date, no more Celery can be created, which means staking stops
 
 
+### Get Circulating Supply
+
+Retrieves the circulating token supply excluding all staking and payout tokens.
+
+### Get Total Staking Supply
+
+Calculates and retrieves the total token staking supply.
+
+### Get Total Payout Supply
+
+Retrieves the total payout supply
+
+### Get Fully Diluted Supply
+
+Retrieves the fully dilulted token supply which includes all staking and payout tokens.
+
 ## Math
 
 ### Staking
