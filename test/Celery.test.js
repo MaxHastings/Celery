@@ -40,7 +40,7 @@ describe("Test Celery reverts", function () {
 
         // Start Stake again
         await expect(Celery.startStake()).to.be.revertedWith(
-            "Already in stake status."
+            "Account already staking."
         );
     });
 
@@ -48,7 +48,7 @@ describe("Test Celery reverts", function () {
     it("Test start payout when already in payout reverts", async function () {
         // Start Payout
         await expect(Celery.startPayout()).to.be.revertedWith(
-            "Already in payout status."
+            "Account already in payout."
         );
     });
 

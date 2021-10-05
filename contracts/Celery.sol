@@ -1,21 +1,26 @@
 //SPDX-License-Identifier: GPL-3.0
+
+// Locked to specific version
 pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "prb-math/contracts/PRBMathUD60x18.sol";
 
-// Statuses
+// Each account can be in one status, payout or stake
 enum Status {
     PAYOUT,
     STAKE
 }
 
-//Amount Type
+// Two types of amounts can be specified for the "forcePayout" method
+// If TO_WALLET, amount is what you want into your wallet (post-penalty).
+// If FROM_ACCOUNT, amount is what you want to take from your account (pre-penalty).
 enum AmountType {
     TO_WALLET,
     FROM_ACCOUNT
 }
 
+// Each address that interacts with the contract will store the below data.
 struct Account {
     // The number of tokens in the Account balance
     uint256 balance;
@@ -37,16 +42,17 @@ contract Celery is ERC20 {
     // 1 year is equal to in seconds. 60 sec * 60 min * 24 hr * 365 days = 31536000 seconds in a year.
     uint256 private constant SECONDS_PER_YEAR = 31536000;
 
-    // Max 256 Integer
-    uint256 private constant MAX_INT = 2**256 - 1;
+    // Max 256 bit Integer
+    uint256 private constant MAX_256_UINT = 2**256 - 1;
 
     // End time to earn interest
     uint256 private immutable _endInterestTime;
 
     // APY 100% interest
-    // APR 69.314..% continously compounded interest rate
+    // APR 69.314...% continously compounded interest rate
     // Interest rate is represented as a 60.18-decimal fixed-point number
     uint256 private constant INTEREST = 693147180559945309;
+
     // Euler's constant represented as a 60.18-decimal fixed-point number
     uint256 private constant EULER = 2718281828459045235;
 
@@ -57,10 +63,12 @@ contract Celery is ERC20 {
 
         // Calculate the end time for when to stop interest
         uint256 initialSupply = PRBMathUD60x18.fromUint(initialSupplyNorm);
-        uint256 compoundedInterest = PRBMathUD60x18.div(MAX_INT, initialSupply);
+        uint256 compoundedInterest = PRBMathUD60x18.div(MAX_256_UINT, initialSupply);
         uint256 rateTime = PRBMathUD60x18.ln(compoundedInterest);
         uint256 numberOfYears = PRBMathUD60x18.div(rateTime, INTEREST);
         uint256 numberOfYearsNorm = PRBMathUD60x18.toUint(numberOfYears);
+
+        // solhint-disable-next-line not-rely-on-time
         _endInterestTime = block.timestamp + (numberOfYearsNorm * SECONDS_PER_YEAR);
     }
 
@@ -68,14 +76,14 @@ contract Celery is ERC20 {
 
     /// @notice Retrieves the amount of tokens currently in Account Balance
     /// @param addr The address that is asssociated with the Account
-    /// @return amount of tokens in the Account
+    /// @return Amount of tokens in the Account
     function getAccountBalance(address addr) public view returns (uint256) {
         return _accounts[addr].balance;
     }
 
     /// @notice Retrieves the last time the Account was updated.
     /// @param addr The address that is asssociated with the Account
-    /// @return epoch time in seconds
+    /// @return Epoch time in seconds
     function getLastProcessedTime(address addr) public view returns (uint256) {
         return _accounts[addr].lastProcessedTime;
     }
@@ -83,20 +91,20 @@ contract Celery is ERC20 {
     /// @notice Retrieves what the last staking Account Balance was before payout mode started.
     /// @param addr The address that is asssociated with the Account
     /// @dev Account status must be in payout for this data to be useful.
-    /// @return epoch time in seconds
+    /// @return Epoch time in seconds
     function getLastStakingBalance(address addr) public view returns (uint256) {
         return _accounts[addr].lastStakingBalance;
     }
 
     /// @notice Retrieves the Account status, either Payout or Staking.
     /// @param addr The address that is asssociated with the Account
-    /// @return status of Account, 0 = Payout, 1 = Staking
+    /// @return Status of Account, 0 = Payout, 1 = Staking
     function getStatus(address addr) public view returns (uint8) {
         return uint8(_accounts[addr].status);
     }
 
     /// @notice Retrieves the end time when interest stops
-    /// @return unix seconds for when interest ends
+    /// @return Epoch time in seconds
     function getEndInterestTime() public view returns (uint256) {
         return _endInterestTime;
     }
@@ -109,13 +117,13 @@ contract Celery is ERC20 {
     /// @dev Check if already staking and if not, process an account payout then switch to staking.
     function startStake() public {
         // Check if Account is already staking
-        require(_isAccountInPayout(), "Already in stake status.");
+        require(_isAccountInPayout(), "Account already staking.");
 
         _startStake();
     }
 
     /// @notice Transfer additional tokens to account balance and start staking.
-    /// @param amount number of tokens to add to Account balance.
+    /// @param amount Number of tokens to add to Account balance.
     function increaseBalanceAndStake(uint256 amount) public {
         // Check if amount is greater than zero.
         require(amount > 0, "Amount must be greater than 0.");
@@ -139,14 +147,14 @@ contract Celery is ERC20 {
     /// @notice Switches Account status to start payout.
     function startPayout() public {
         // Check if Account is already in payout
-        require(_isAccountInStake(), "Already in payout status.");
+        require(_isAccountInStake(), "Account already in payout.");
 
         _startPayout();
     }
 
-    /// @notice Receive the tokens that are available for payout.
+    /// @notice Receive the tokens that are available for payout. There is no penalty on collected tokens.
     function collectPayout() public {
-        // Make sure account is in payout before collecting.
+        // Make sure account is in payout before collecting
         require(_isAccountInPayout(), "Account is staking.");
 
         // Process an account payout
@@ -154,9 +162,9 @@ contract Celery is ERC20 {
         require(payout > 0, "Nothing to payout.");
     }
 
-    /// @notice Force a payout amount to collect with up to a 50% penalty
-    /// @param amount of tokens to collect from account
-    /// @param amountType If 0, amount is what you want into your wallet (post-penalty). If 1, amount is what you want to take from your account (pre-penalty)
+    /// @notice Force a payout amount to collect with up to a 50% penalty.
+    /// @param amount of tokens to collect from account.
+    /// @param amountType If 0, amount is what you want into your wallet (post-penalty). If 1, amount is what you want to take from your account (pre-penalty).
     function forcePayout(uint256 amount, AmountType amountType) public {
         // Check if amount is greater than zero.
         require(amount > 0, "Amount must be greater than 0.");
@@ -167,12 +175,12 @@ contract Celery is ERC20 {
         // Process an account collect payout
         uint256 collectPayoutAmount = _processPayoutToAccount();
 
-        // If payout amount is greater than or equal to what user wants to collect then return early with 0 penalty.
+        // If payout amount is greater than or equal to what user wants to collect then return early with 0 penalty
         if (collectPayoutAmount >= amount) {
             return;
         }
 
-        // Calculate the remaining number of tokens to force payout.
+        // Calculate the remaining number of tokens to force payout
         uint256 penalizedAmountToCollect = amount - collectPayoutAmount;
 
         // If to wallet type, we double this amount (as it will later be penalized by 50%)
@@ -189,6 +197,7 @@ contract Celery is ERC20 {
 
         // Subtract amount collected from account balance
         _setBalance(accountBalance - penalizedAmountToCollect);
+
         // Update last time processsed account
         _updateProcessedTime();
 
@@ -204,6 +213,8 @@ contract Celery is ERC20 {
 
     /*** ***/
 
+    /*** Private functions ***/
+
     function _startStake() private {
         if (_isAccountInStake()) {
             return;
@@ -214,6 +225,7 @@ contract Celery is ERC20 {
 
         // Set Account to start staking.
         _setStatus(Status.STAKE);
+
         // Notify that account status is now staking
         emit AccountStatusEvent(msg.sender, Status.STAKE);
     }
@@ -229,6 +241,7 @@ contract Celery is ERC20 {
 
         // Set Account to start payout.
         _setStatus(Status.PAYOUT);
+
         // Notify that account status is now paying out
         emit AccountStatusEvent(msg.sender, Status.PAYOUT);
 
@@ -238,7 +251,6 @@ contract Celery is ERC20 {
     }
 
     /*
-    Private Function
     Calculates and adds the interest earned to the staked account balance.
     Formula used for calculating interest. Continously compounding interest.
     
@@ -258,6 +270,7 @@ contract Celery is ERC20 {
         // Update the time for last processed account
         _updateProcessedTime();
 
+        // solhint-disable-next-line not-rely-on-time
         uint256 timeStamp = block.timestamp;
 
         // Prevent adding interest past the end interest time. ( Stops token supply overflows )
@@ -310,7 +323,6 @@ contract Celery is ERC20 {
     }
 
     /*
-    Private Function
     Calculates and processes the payout back to the account address.
     Returns number of tokens paid back to account owner.
     */
@@ -319,6 +331,7 @@ contract Celery is ERC20 {
         uint256 lastTime = getLastProcessedTime(msg.sender);
 
         // Calculate the number of seconds account has been in payout for.
+        // solhint-disable-next-line not-rely-on-time
         uint256 timePassedInSecondsInt = block.timestamp - lastTime;
 
         // Get the amount of tokens in Account balance.
@@ -381,7 +394,6 @@ contract Celery is ERC20 {
     }
 
     /*
-    Private Fucntion
     Sends Tokens to account address.
     */
     function _payoutAmountToAccount(uint256 amount) private {
@@ -404,21 +416,8 @@ contract Celery is ERC20 {
         }
     }
 
-    /*** Events ***/
-    // Event that an account forced payout with a penalty
-    event ForcePayoutEvent(address _address, uint256 _amount);
-
-    // Event that an account collected payout
-    event CollectPayoutEvent(address _address, uint256 _amount);
-
-    // Event that an account increased its balance
-    event IncreaseBalanceAndStakeEvent(address _address, uint256 _amount);
-
-    // Event that an account status has been changed.
-    event AccountStatusEvent(address _address, Status _value);
-
-    /*** Helpers ***/
     function _updateProcessedTime() private {
+        // solhint-disable-next-line not-rely-on-time
         _accounts[msg.sender].lastProcessedTime = block.timestamp;
     }
 
@@ -445,4 +444,22 @@ contract Celery is ERC20 {
     function _setBalance(uint256 amount) private {
         _accounts[msg.sender].balance = amount;
     }
+
+    /*** ***/
+
+    /*** Events ***/
+
+    // Event that an account forced payout with a penalty
+    event ForcePayoutEvent(address _address, uint256 _amount);
+
+    // Event that an account collected payout
+    event CollectPayoutEvent(address _address, uint256 _amount);
+
+    // Event that an account increased its balance
+    event IncreaseBalanceAndStakeEvent(address _address, uint256 _amount);
+
+    // Event that an account status has been changed.
+    event AccountStatusEvent(address _address, Status _value);
+
+    /*** ***/
 }
