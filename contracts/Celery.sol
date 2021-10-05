@@ -80,6 +80,7 @@ contract Celery is ERC20 {
         // solhint-disable-next-line not-rely-on-time
         _endInterestTime = block.timestamp + (numberOfYearsNorm * SECONDS_PER_YEAR);
 
+        // solhint-disable-next-line not-rely-on-time
         _totalStakingTime = block.timestamp;
     }
 
@@ -119,7 +120,7 @@ contract Celery is ERC20 {
     function getEndInterestTime() public view returns (uint256) {
         return _endInterestTime;
     }
-    
+
     /// @notice Retrieves the circulating token supply excluding staking and payout tokens
     /// @return Circulating token supply amount
     function getCirculatingSupply() public view returns (uint256) {
@@ -184,6 +185,7 @@ contract Celery is ERC20 {
     }
 
     function _getStakingTimestamp() private view returns (uint256) {
+        // solhint-disable-next-line not-rely-on-time
         uint256 timeStamp = block.timestamp;
 
         // Prevent adding interest past the end interest time ( Stops token supply overflows )
@@ -195,7 +197,6 @@ contract Celery is ERC20 {
     }
 
     function _processTotalStakingSupply() private {
-
         uint256 timeStamp = _getStakingTimestamp();
 
         // If last processed time is equal to or greater than current time, return
@@ -207,6 +208,7 @@ contract Celery is ERC20 {
 
         _totalStakingSupply = _calculateInterest(_totalStakingSupply, secondsStaked);
 
+        // solhint-disable-next-line not-rely-on-time
         _totalStakingTime = block.timestamp;
     }
 
@@ -373,7 +375,6 @@ contract Celery is ERC20 {
     }
 
     function _calculateInterest(uint256 stakedAmountNorm, uint256 secondsStakedNorm) public pure returns (uint256) {
-
         // Convert seconds staked into fixed point number
         uint256 secondsStaked = PRBMathUD60x18.fromUint(secondsStakedNorm);
 
