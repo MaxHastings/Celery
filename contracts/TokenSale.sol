@@ -4,7 +4,7 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract TokenSale {
-    IERC20Metadata public tokenContract; // the token being sold
+    IERC20Metadata public immutable tokenContract; // the token being sold
     uint256 public immutable tokenPrice; // the price, in wei, per token
     uint256 public tokensSold = 0;
     bool public saleActive = false;
