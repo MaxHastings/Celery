@@ -56,10 +56,18 @@ contract Celery is ERC20 {
     // Euler's constant represented as a 60.18-decimal fixed-point number
     uint256 private constant EULER = 2718281828459045235;
 
+    // Repeated constant strings for requires
+    string private constant TIMESTAMP_TOO_EARLY = "Timestamp too early.";
+    string private constant ACCOUNT_IS_STAKING = "Account is staking.";
+    string private constant AMOUNT_IS_0 = "Amount must be greater than 0.";
+
     // Contract creation
     constructor(uint256 initialSupplyNorm) ERC20("Celery", "CLY") {
-        _mint(msg.sender, initialSupplyNorm); // Create initial supply
-        approve(msg.sender, initialSupplyNorm); //Approves the initial supply for the sender to use
+        // Create initial supply
+        _mint(msg.sender, initialSupplyNorm);
+
+        //Approves the initial supply for the sender to use
+        approve(msg.sender, initialSupplyNorm);
 
         // Calculate the end time for when to stop interest
         uint256 initialSupply = PRBMathUD60x18.fromUint(initialSupplyNorm);
@@ -114,12 +122,12 @@ contract Celery is ERC20 {
     /// @param timeStamp The future timestamp of the planned collection time
     /// @return The Celery you would collect if you executed a collect payout at the provided timestamp
     function estimateCollectPayout(address addr, uint256 timeStamp) public view returns (uint256) {
-        require(_isAccountInPayout(), "Account is staking.");
+        require(_isAccountInPayout(), ACCOUNT_IS_STAKING);
 
         // Get the last time account was processed.
         uint256 lastProcessedTime = getLastProcessedTime(addr);
 
-        require(timeStamp >= lastProcessedTime, "Timestamp too early.");
+        require(timeStamp >= lastProcessedTime, TIMESTAMP_TOO_EARLY);
 
         return _calculatePayoutToAccount(addr, timeStamp);
     }
@@ -134,7 +142,7 @@ contract Celery is ERC20 {
         // Get the last time account was processed.
         uint256 lastProcessedTime = getLastProcessedTime(addr);
 
-        require(timeStamp >= lastProcessedTime, "Timestamp too early.");
+        require(timeStamp >= lastProcessedTime, TIMESTAMP_TOO_EARLY);
 
         return _calculateStakedAmount(addr, timeStamp, lastProcessedTime);
     }
@@ -152,12 +160,12 @@ contract Celery is ERC20 {
         uint256 timeStamp
     ) public view returns (uint256) {
         // Check if amount is greater than zero.
-        require(amount > 0, "Amount must be greater than 0.");
+        require(amount > 0, AMOUNT_IS_0);
 
         // Get the last time account was processed.
         uint256 lastProcessedTime = getLastProcessedTime(addr);
 
-        require(timeStamp >= lastProcessedTime, "Timestamp too early.");
+        require(timeStamp >= lastProcessedTime, TIMESTAMP_TOO_EARLY);
 
         // Calculate an account collect payout
         uint256 collectPayoutAmount = _calculatePayoutToAccount(addr, timeStamp);
@@ -192,7 +200,7 @@ contract Celery is ERC20 {
     /// @param amount Number of tokens to add to Account balance
     function increaseBalanceAndStake(uint256 amount) public {
         // Check if amount is greater than zero
-        require(amount > 0, "Amount must be greater than 0.");
+        require(amount > 0, AMOUNT_IS_0);
 
         // Start staking if not already
         _startStake();
@@ -221,7 +229,7 @@ contract Celery is ERC20 {
     /// @notice Receive the tokens that are available for payout. There is no penalty on collected tokens
     function collectPayout() public {
         // Make sure account is in payout before collecting
-        require(_isAccountInPayout(), "Account is staking.");
+        require(_isAccountInPayout(), ACCOUNT_IS_STAKING);
 
         // Process an account payout
         uint256 payout = _processPayoutToAccount();
@@ -233,7 +241,7 @@ contract Celery is ERC20 {
     /// @param amountType If 0, amount is what you want into your wallet (post-penalty). If 1, amount is what you want to take from your account (pre-penalty)
     function forcePayout(uint256 amount, AmountType amountType) public {
         // Check if amount is greater than zero.
-        require(amount > 0, "Amount must be greater than 0.");
+        require(amount > 0, AMOUNT_IS_0);
 
         // Start payout if not already
         _startPayout();
