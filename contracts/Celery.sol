@@ -531,6 +531,9 @@ contract Celery is ERC20 {
             // Subtract payout amount from Account balance.
             _accounts[msg.sender].balance -= payoutAmount;
 
+            // Subtract payout amount from total payout supply.
+            _totalPayoutSupply -= payoutAmount;
+
             // Notify that an Account collected a payout.
             emit CollectPayoutEvent(msg.sender, payoutAmount);
         }
