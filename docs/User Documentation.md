@@ -131,17 +131,37 @@ Returns: End interest time [epoch time in seconds] (uint256)
 
 Retrieves the circulating token supply excluding all staking and payout tokens.
 
+```
+Function Name: getCirculatingSupply
+Returns: Circulating token supply (uint256)
+```
+
 ### Get Total Staking Supply
 
 Calculates and retrieves the total token staking supply.
+
+```
+Function Name: getTotalStakingSupply
+Returns: Staking token supply (uint256)
+```
 
 ### Get Total Payout Supply
 
 Retrieves the total payout supply
 
+```
+Function Name: getTotalPayoutSupply
+Returns: Payout token supply (uint256)
+```
+
 ### Get Fully Diluted Supply
 
 Retrieves the fully dilulted token supply which includes all staking and payout tokens.
+
+```
+Function Name: getFullyDilutedSupply
+Returns: Fully diluted token supply (uint256)
+```
 
 ### Estimate Collect Payout
 

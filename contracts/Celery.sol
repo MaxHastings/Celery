@@ -149,6 +149,13 @@ contract Celery is ERC20 {
         return _totalPayoutSupply;
     }
 
+    /// @notice Retrieves the fully dilulted token supply which includes all staking and payout tokens
+    /// @return Fully Diluted token supply amount
+    function getFullyDilutedSupply() public view returns (uint256) {
+        return getCirculatingSupply() + getTotalStakingSupply() + _totalPayoutSupply;
+    }
+
+
     /// @notice Allows you to estimate how much is available to collect from your account penalty-free at a specific point in time if you remain in payout status
     /// @param addr The address that is asssociated with the Account
     /// @param timeStamp The future timestamp of the planned collection time
@@ -218,12 +225,6 @@ contract Celery is ERC20 {
         uint256 penaltyAmount = penalizedAmountToCollect / 2;
 
         return penaltyAmount;
-    }
-
-    /// @notice Retrieves the fully dilulted token supply which includes all staking and payout tokens
-    /// @return Fully Diluted token supply amount
-    function getFullyDilutedSupply() public view returns (uint256) {
-        return getCirculatingSupply() + getTotalStakingSupply() + _totalPayoutSupply;
     }
 
     /*** ***/
