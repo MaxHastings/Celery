@@ -74,6 +74,81 @@ describe("Test Celery reverts", function () {
             "Amount must be greater than 0."
         );
     });
+
+    it("Test if estimate payout reverts when in stake status", async function () {
+        // Start Stake
+        await Celery.startStake();
+
+        await expect(Celery.estimateCollectPayout(this.owner.address, 1)).to.be.revertedWith(
+            "Account is staking."
+        );
+    });
+
+    it("Test if estimate payout reverts when less than time snapshot", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        // Subtract half a year;
+        const tooEarly = await getLastBlockTime() - 1;
+
+        await Celery.startPayout();
+
+        await expect(Celery.estimateCollectPayout(this.owner.address, tooEarly)).to.be.revertedWith(
+            "Timestamp too early."
+        );
+    });
+
+    it("Test if estimate stake reverts when in payout status", async function () {
+        await expect(Celery.estimateStakeBalance(this.owner.address, 1)).to.be.revertedWith(
+            "Account is in payout."
+        );
+    });
+
+    it("Test if estimate stake reverts when less than time snapshot", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        // Subtract half a year;
+        const tooEarly = await getLastBlockTime() - 1;
+
+        await expect(Celery.estimateStakeBalance(this.owner.address, tooEarly)).to.be.revertedWith(
+            "Timestamp too early."
+        );
+    });
+
+    it("Test if estimate of force payout penalty reverts on too high of amount", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        await Celery.startPayout();
+
+        // Pass by half a year;
+        const halfYearLater = await getLastBlockTime() + 15768000;
+
+        // -1 added due to rounding errors when dealing with such small numbers over the course of a year (and stake does a ceil call)
+        await expect(Celery.estimateForcePayoutPenaltyFee(this.owner.address, initialSupply, 0, halfYearLater)).to.be.revertedWith(
+            "Insufficient account balance."
+        );
+    });
+
+    it("Test if estimate of force payout penalty reverts on amount = 0", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        await Celery.startPayout();
+
+        // -1 added due to rounding errors when dealing with such small numbers over the course of a year (and stake does a ceil call)
+        await expect(Celery.estimateForcePayoutPenaltyFee(this.owner.address, 0, 0, 0)).to.be.revertedWith(
+            "Amount must be greater than 0."
+        );
+    });
+
+    it("Test if estimate force payout reverts when less than time snapshot", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        // Subtract half a year;
+        const tooEarly = await getLastBlockTime() - 1;
+
+        await expect(Celery.estimateForcePayoutPenaltyFee(this.owner.address, initialSupply, 1, tooEarly)).to.be.revertedWith(
+            "Timestamp too early."
+        );
+    });
 });
 
 describe("Test Celery staking", function () {
@@ -96,7 +171,7 @@ describe("Test Celery staking", function () {
         await Celery.startPayout();
 
         await expectAccountAmount(this.owner.address, 0);
-        
+
     });
 
     it("Test interest end time", async function () {
@@ -285,6 +360,81 @@ describe("Test Celery staking", function () {
 
         // Test if contract token balance is empty
         await expectTokenBalance(Celery.address, 0);
+    });
+
+    it("Test if estimate of future payout is accurate", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        // Pass by half a year;
+        const halfYearLater = await getLastBlockTime() + 15768000;
+
+        await Celery.startPayout();
+
+        // +1 added due to rounding errors when dealing with such small numbers over the course of a year (and stake does a ceil call)
+        await expect((await Celery.estimateCollectPayout(this.owner.address, halfYearLater)).toString()).to.equal(
+            ((initialSupply * 0.5) + 1).toString()
+        );
+    });
+
+    it("Test if estimate of future payout is accurate when well beyond a year", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        // Pass by year and a half;
+        const yearAndHalfLater = await getLastBlockTime() + 47304000;
+
+        await Celery.startPayout();
+
+        // +1 added due to rounding errors when dealing with such small numbers over the course of a year (and stake does a ceil call)
+        await expect((await Celery.estimateCollectPayout(this.owner.address, yearAndHalfLater)).toString()).to.equal(
+            (initialSupply + 1).toString()
+        );
+    });
+
+    it("Test if estimate of future stake balance is accurate", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        // Pass by half a year;
+        const halfYear = 15768000;
+        const halfYearLater = (await Celery.getLastProcessedTime(this.owner.address)).add(halfYear);
+
+        await expect((await Celery.estimateStakeBalance(this.owner.address, halfYearLater.toString())).toString()).to.equal(
+            calculateStake(initialSupply, halfYear).toString()
+        );
+    });
+
+    it("Test if estimate of force payout penalty is accurate", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        await Celery.startPayout();
+
+        // Pass by half a year;
+        const halfYearLater = await getLastBlockTime() + 15768000;
+
+        // Expected amount based on penalty of 50% (We take 50% first because that's what is unavaialble, and 50% of that would be the fee)
+        const penaltyAmount = (initialSupply * 0.5) * 0.5;
+
+        // -1 added due to rounding errors when dealing with such small numbers over the course of a year (and stake does a ceil call)
+        await expect((await Celery.estimateForcePayoutPenaltyFee(this.owner.address, initialSupply, 1, halfYearLater)).toString()).to.equal(
+            (penaltyAmount - 1).toString()
+        );
+    });
+
+    it("Test if estimate of force payout penalty is accurate (TO_WALLET)", async function () {
+        await Celery.increaseBalanceAndStake(initialSupply);
+
+        await Celery.startPayout();
+
+        // Pass by half a year;
+        const halfYearLater = await getLastBlockTime() + 15768000;
+
+        // Expected amount based on penalty of 50% (We take 50% first because that's what is unavaialble, and 50% of that would be the fee)
+        const penaltyAmount = (initialSupply * 0.5) * 0.5;
+
+        // -1 added due to rounding errors when dealing with such small numbers over the course of a year (and stake does a ceil call)
+        // Our amount is 0.75, because we are using a TO_WALLET type, so amount is post-penalty value
+        await expect((await Celery.estimateForcePayoutPenaltyFee(this.owner.address, initialSupply * 0.75, 0, halfYearLater)).toString()).to.equal(
+            (penaltyAmount - 1).toString()
+        );
     });
 });
 
