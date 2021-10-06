@@ -161,6 +161,22 @@ Contract handled errors: If the timestamp provided is earlier than when the stak
 ```
 
 
+### Get Circulating Supply
+
+Retrieves the circulating token supply excluding all staking and payout tokens.
+
+### Get Total Staking Supply
+
+Calculates and retrieves the total token staking supply.
+
+### Get Total Payout Supply
+
+Retrieves the total payout supply
+
+### Get Fully Diluted Supply
+
+Retrieves the fully dilulted token supply which includes all staking and payout tokens.
+
 ## Math
 
 ### Staking

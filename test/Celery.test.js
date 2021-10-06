@@ -459,6 +459,39 @@ describe("Test Celery payouts", function () {
         // Should have 1000 tokens in Account Balance before each of the following tests run
     });
 
+    it("Test initial supply", async function () {
+        await expectTotalStakingSupply(0);
+
+        await expectTotalPayoutSupply(initialSupply);
+
+        await expectFullyDilutedSupply(initialSupply);
+    });
+
+    it("Test supply after collect", async function () {
+
+        await increaseBlockTime(SECONDS_IN_A_YEAR / 2);
+
+        await Celery.collectPayout();
+
+        await expectTotalStakingSupply(0);
+
+        await expectTotalPayoutSupply(initialSupply / 2);
+
+        await expectFullyDilutedSupply(initialSupply);
+    });
+
+    it("Test supply after force payout", async function () {
+
+        await Celery.forcePayout(initialSupply / 2, 1);
+
+        await expectTotalStakingSupply(0);
+
+        await expectTotalPayoutSupply(initialSupply / 2);
+
+        await expectFullyDilutedSupply(initialSupply * 0.75);
+
+    });
+
     it("Test if last staked balance is correct", async function () {
         await expectLastStakedBalance(this.owner.address, initialSupply);
     });
@@ -588,6 +621,74 @@ describe("Test Celery payouts", function () {
     });
 });
 
+describe("Test Celery Supply with multiple accounts", function () {
+    var initialSupply = 1000;
+
+    before(async function () {
+        this.CeleryFactory = await ethers.getContractFactory("Celery");
+        this.signers = await ethers.getSigners();
+        this.user1 = this.signers[0];
+        this.user2 = this.signers[1];
+    });
+
+    beforeEach(async function () {
+        Celery = await this.CeleryFactory.deploy(initialSupply);
+        await Celery.deployed();
+        await Celery.transfer(this.user2.address, 500);
+    });
+
+    it("Test circulating supply", async function () {
+        await Celery.increaseBalanceAndStake(500);
+        await expectCirculatingSupply(500);
+    });
+
+    it("Test supply using two staking accounts", async function () {
+        await Celery.increaseBalanceAndStake(500);
+
+        await increaseBlockTime(SECONDS_IN_A_YEAR);
+
+        await Celery.connect(this.user2).increaseBalanceAndStake(500);
+
+        await increaseBlockTime(SECONDS_IN_A_YEAR);
+
+        await expectTotalStakingSupply(3000);
+
+        await expectTotalPayoutSupply(0);
+
+        await expectFullyDilutedSupply(3000);
+    });
+
+    it("Test supply using two payout accounts", async function () {
+
+        await Celery.increaseBalanceAndStake(500);
+
+        await increaseBlockTime(SECONDS_IN_A_YEAR);
+
+        await Celery.connect(this.user2).increaseBalanceAndStake(500);
+
+        await increaseBlockTime(SECONDS_IN_A_YEAR);
+
+        await Celery.connect(this.user2).startPayout();
+
+        await expectTotalStakingSupply(2000);
+
+        await expectTotalPayoutSupply(1000);
+
+        await expectFullyDilutedSupply(3000);
+
+        await increaseBlockTime(SECONDS_IN_A_YEAR);
+
+        await Celery.startPayout();
+
+        await expectTotalStakingSupply(0);
+
+        await expectTotalPayoutSupply(5000);
+
+        await expectFullyDilutedSupply(5000);
+        
+    });
+});
+
 // *** Helper Functions *** //
 
 function calculateStake(amount, stakedTime) {
@@ -596,6 +697,30 @@ function calculateStake(amount, stakedTime) {
 }
 
 // *** Expect Functions *** //
+
+async function expectTotalPayoutSupply(amount) {
+    await expect((await Celery.getTotalPayoutSupply()).toString()).to.equal(
+        amount.toString()
+    );
+}
+
+async function expectTotalStakingSupply(amount) {
+    await expect((await Celery.getTotalStakingSupply()).toString()).to.equal(
+        amount.toString()
+    );
+}
+
+async function expectFullyDilutedSupply(amount) {
+    await expect((await Celery.getFullyDilutedSupply()).toString()).to.equal(
+        amount.toString()
+    );
+}
+
+async function expectCirculatingSupply(amount) {
+    await expect((await Celery.getCirculatingSupply()).toString()).to.equal(
+        amount.toString()
+    );
+}
 
 async function expectTokenBalance(address, amount) {
     await expect((await Celery.balanceOf(address)).toString()).to.equal(
