@@ -177,39 +177,14 @@ contract Celery is ERC20 {
         // Add the additional tokens to their Account balance
         _accounts[msg.sender].balance += amount;
 
+        // Process total staking supply before adding to it.
         _processTotalStakingSupply();
+
+        // Add account balance to total staking supply.
         _totalStakingSupply += amount;
 
         // Notify that the account increased its token balance
         emit IncreaseBalanceAndStakeEvent(msg.sender, amount);
-    }
-
-    function _getStakingTimestamp() private view returns (uint256) {
-        // solhint-disable-next-line not-rely-on-time
-        uint256 timeStamp = block.timestamp;
-
-        // Prevent adding interest past the end interest time ( Stops token supply overflows )
-        if (timeStamp > _endInterestTime) {
-            timeStamp = _endInterestTime;
-        }
-
-        return timeStamp;
-    }
-
-    function _processTotalStakingSupply() private {
-        uint256 timeStamp = _getStakingTimestamp();
-
-        // If last processed time is equal to or greater than current time, return
-        if (_totalStakingTime >= timeStamp) {
-            return;
-        }
-
-        uint256 secondsStaked = timeStamp - _totalStakingTime;
-
-        _totalStakingSupply = _calculateInterest(_totalStakingSupply, secondsStaked);
-
-        // solhint-disable-next-line not-rely-on-time
-        _totalStakingTime = block.timestamp;
     }
 
     /// @notice Switches Account status to start payout
@@ -266,6 +241,7 @@ contract Celery is ERC20 {
         // Subtract amount collected from account balance
         _setBalance(accountBalance - penalizedAmountToCollect);
 
+        // Subtract penalized amount from total payout supply.
         _totalPayoutSupply -= penalizedAmountToCollect;
 
         // Update last time processsed account
@@ -285,6 +261,36 @@ contract Celery is ERC20 {
 
     /*** Private functions ***/
 
+    // Get the current block timestamp with end interest time being the upper limit. 
+    function _getStakingTimestamp() private view returns (uint256) {
+        // solhint-disable-next-line not-rely-on-time
+        uint256 timeStamp = block.timestamp;
+
+        // Prevent adding interest past the end interest time ( Stops token supply overflows )
+        if (timeStamp > _endInterestTime) {
+            timeStamp = _endInterestTime;
+        }
+
+        return timeStamp;
+    }
+
+    // Calculate and save the total staking supply interest.
+    function _processTotalStakingSupply() private {
+        uint256 timeStamp = _getStakingTimestamp();
+
+        // If last processed time is equal to or greater than current time, return
+        if (_totalStakingTime >= timeStamp) {
+            return;
+        }
+
+        uint256 secondsStaked = timeStamp - _totalStakingTime;
+
+        _totalStakingSupply = _calculateInterest(_totalStakingSupply, secondsStaked);
+
+        // solhint-disable-next-line not-rely-on-time
+        _totalStakingTime = block.timestamp;
+    }
+
     function _startStake() private {
         if (_isAccountInStake()) {
             return;
@@ -296,9 +302,14 @@ contract Celery is ERC20 {
         // Set Account to start staking
         _setStatus(AccountStatus.STAKE);
 
+        // Process Total Staking supply before adding to it.
         _processTotalStakingSupply();
         uint256 accountBalance = _getBalance();
+
+        // Subtract account balance from total payout supply.
         _totalPayoutSupply -= accountBalance;
+
+        // Add account balance to total staking supply.
         _totalStakingSupply += accountBalance;
 
         // Notify that account status is now staking
@@ -324,8 +335,13 @@ contract Celery is ERC20 {
         uint256 currStakedNorm = _getBalance();
         _accounts[msg.sender].lastStakingBalance = currStakedNorm;
 
+        // Process Total Staking supply before subtracing from it.
         _processTotalStakingSupply();
+
+        // Remove Account Balance from staking supply.
         _totalStakingSupply -= currStakedNorm;
+
+        // Add Account Balance to payout Supply.
         _totalPayoutSupply += currStakedNorm;
     }
 
@@ -374,7 +390,9 @@ contract Celery is ERC20 {
         _setBalance(newAmountInt);
     }
 
-    function _calculateInterest(uint256 stakedAmountNorm, uint256 secondsStakedNorm) public pure returns (uint256) {
+    // Calculates the new staking balance which is composed of the current staked balance plus the interest earned over the number of seconds staked.
+    // Returns the current staked balance + interest
+    function _calculateInterest(uint256 stakedAmountNorm, uint256 secondsStakedNorm) private pure returns (uint256) {
         // Convert seconds staked into fixed point number
         uint256 secondsStaked = PRBMathUD60x18.fromUint(secondsStakedNorm);
 
@@ -465,6 +483,7 @@ contract Celery is ERC20 {
             // Subtract payout amount from Account balance
             _accounts[msg.sender].balance -= payoutAmount;
 
+            // Subtract payout amount from total payout supply.
             _totalPayoutSupply -= payoutAmount;
 
             // Notify that an Account collected a payout
