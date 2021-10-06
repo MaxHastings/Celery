@@ -69,6 +69,7 @@ contract Celery is ERC20 {
     string private constant TIMESTAMP_TOO_EARLY = "Timestamp too early.";
     string private constant ACCOUNT_IS_STAKING = "Account is staking.";
     string private constant AMOUNT_IS_0 = "Amount must be greater than 0.";
+    string private constant INSUFFICIENT_ACCOUNT_BALANCE = "Insufficient account balance.";
 
     // Contract creation
     constructor(uint256 initialSupplyNorm) ERC20("Celery", "CLY") {
@@ -211,7 +212,7 @@ contract Celery is ERC20 {
         uint256 accountBalance = getAccountBalance(addr);
 
         // Check if force payout (along with the normal collect) is more than account balance
-        require(penalizedAmountToCollect + collectPayoutAmount <= accountBalance, "Account balance cannot cover.");
+        require(penalizedAmountToCollect + collectPayoutAmount <= accountBalance, INSUFFICIENT_ACCOUNT_BALANCE);
 
         // Apply 50% penalty to amount (which in turn gives us the penalty itself)
         uint256 penaltyAmount = penalizedAmountToCollect / 2;
@@ -306,7 +307,7 @@ contract Celery is ERC20 {
         uint256 accountBalance = _getBalance();
 
         // Check if force payout is more than account balance
-        require(penalizedAmountToCollect <= accountBalance, "Insufficient account balance.");
+        require(penalizedAmountToCollect <= accountBalance, INSUFFICIENT_ACCOUNT_BALANCE);
 
         // Subtract amount with penalty from account balance
         _setBalance(accountBalance - penalizedAmountToCollect);

@@ -127,6 +127,22 @@ Parameters: address (Address)
 Returns: End interest time [epoch time in seconds] (uint256)
 ```
 
+### Get Circulating Supply
+
+Retrieves the circulating token supply excluding all staking and payout tokens.
+
+### Get Total Staking Supply
+
+Calculates and retrieves the total token staking supply.
+
+### Get Total Payout Supply
+
+Retrieves the total payout supply
+
+### Get Fully Diluted Supply
+
+Retrieves the fully dilulted token supply which includes all staking and payout tokens.
+
 ### Estimate Collect Payout
 
 This allows you to perform an estimate on what would happen if you executed a Collect Payout at a certain point in time, assuming you stay in the payout status the entire time. Passing in a timestamp of a future date since you've started your payout will tell you how much you would received if the Collect Payout function was executed at that exact time. Running a collect/force payout or changing back into stake status after the estimate is run would require it to be run again, as it would be out of date.
@@ -160,22 +176,6 @@ Returns: Estimated Celery penalty that would be taken (uint256)
 Contract handled errors: If the timestamp provided is earlier than when the staking or payout status started, amount is 0, or the penalty is higher than what your account balance could cover at the time.
 ```
 
-
-### Get Circulating Supply
-
-Retrieves the circulating token supply excluding all staking and payout tokens.
-
-### Get Total Staking Supply
-
-Calculates and retrieves the total token staking supply.
-
-### Get Total Payout Supply
-
-Retrieves the total payout supply
-
-### Get Fully Diluted Supply
-
-Retrieves the fully dilulted token supply which includes all staking and payout tokens.
 
 ## Math
 
