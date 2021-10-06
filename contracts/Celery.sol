@@ -444,8 +444,8 @@ contract Celery is ERC20 {
         // Get number of tokens Account is staking
         uint256 currStakedNorm = getAccountBalance(addr);
 
-        // If time stamp provided is earlier than when stake started, return account balance
-        if (lastProcessedTime > timeStamp) {
+        // If last processed time is equal to or greater than current time, return account balance
+        if (lastProcessedTime >= timeStamp) {
             return currStakedNorm;
         }
 
