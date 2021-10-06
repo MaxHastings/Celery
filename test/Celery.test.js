@@ -124,7 +124,7 @@ describe("Test Celery reverts", function () {
 
         // -1 added due to rounding errors when dealing with such small numbers over the course of a year (and stake does a ceil call)
         await expect(Celery.estimateForcePayoutPenaltyFee(this.owner.address, initialSupply, 0, halfYearLater)).to.be.revertedWith(
-            "Account balance cannot cover."
+            "Insufficient account balance."
         );
     });
 
