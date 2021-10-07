@@ -155,7 +155,6 @@ contract Celery is ERC20 {
         return getCirculatingSupply() + getTotalStakingSupply() + _totalPayoutSupply;
     }
 
-
     /// @notice Allows you to estimate how much is available to collect from your account penalty-free at a specific point in time if you remain in payout status
     /// @param addr The address that is asssociated with the Account
     /// @param timeStamp The future timestamp of the planned collection time
@@ -464,8 +463,10 @@ contract Celery is ERC20 {
         return newAmountInt;
     }
 
-    // Calculates the new staking balance which is composed of the current staked balance plus the interest earned over the number of seconds staked
-    // Returns the current staked balance + interest
+    /*
+    Calculates the new staking balance which is composed of the current staked balance plus the interest earned over the number of seconds staked
+    Returns the current staked balance + interest
+    */
     function _calculateInterest(uint256 stakedAmountNorm, uint256 secondsStakedNorm) private pure returns (uint256) {
         // Convert seconds staked into fixed point number
         uint256 secondsStaked = PRBMathUD60x18.fromUint(secondsStakedNorm);
