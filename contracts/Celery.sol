@@ -114,13 +114,13 @@ contract Celery is ERC20 {
     /// @notice Retrieves the Account status, either Payout or Staking
     /// @param addr The address that is asssociated with the Account
     /// @return Status of Account, 0 = Payout, 1 = Staking
-    function getStatus(address addr) public view returns (uint8) {
+    function getStatus(address addr) external view returns (uint8) {
         return uint8(_accounts[addr].status);
     }
 
     /// @notice Retrieves the end time when interest stops
     /// @return Epoch time in seconds
-    function getEndInterestTime() public view returns (uint256) {
+    function getEndInterestTime() external view returns (uint256) {
         return _endInterestTime;
     }
 
@@ -139,13 +139,13 @@ contract Celery is ERC20 {
 
     /// @notice Retrieves the total payout supply
     /// @return Total payout supply amount
-    function getTotalPayoutSupply() public view returns (uint256) {
+    function getTotalPayoutSupply() external view returns (uint256) {
         return _totalPayoutSupply;
     }
 
     /// @notice Retrieves the fully dilulted token supply which includes all staking and payout tokens
     /// @return Fully Diluted token supply amount
-    function getFullyDilutedSupply() public view returns (uint256) {
+    function getFullyDilutedSupply() external view returns (uint256) {
         return getCirculatingSupply() + getTotalStakingSupply() + _totalPayoutSupply;
     }
 
@@ -153,7 +153,7 @@ contract Celery is ERC20 {
     /// @param addr The address that is asssociated with the Account
     /// @param timeStamp The future timestamp of the planned collection time
     /// @return The Celery you would collect if you executed a collect payout at the provided timestamp
-    function estimateCollectPayout(address addr, uint256 timeStamp) public view returns (uint256) {
+    function estimateCollectPayout(address addr, uint256 timeStamp) external view returns (uint256) {
         require(_isAccountInPayout(), ACCOUNT_IS_STAKING);
 
         // Get the last time account was processed.
@@ -170,7 +170,7 @@ contract Celery is ERC20 {
     /// @param addr The address that is asssociated with the Account
     /// @param timeStamp The future timestamp to determine how much celery you would have at that point in time
     /// @return The Celery you would have if you kept staking up until the provided timestamp
-    function estimateStakeBalance(address addr, uint256 timeStamp) public view returns (uint256) {
+    function estimateStakeBalance(address addr, uint256 timeStamp) external view returns (uint256) {
         require(_isAccountInStake(), "Account is in payout.");
 
         // Get the last time account was processed.
@@ -194,7 +194,7 @@ contract Celery is ERC20 {
         uint256 amount,
         AmountType amountType,
         uint256 timeStamp
-    ) public view returns (uint256) {
+    ) external view returns (uint256) {
         require(amount > 0, AMOUNT_IS_0);
 
         // Get the last time account was processed
@@ -226,7 +226,7 @@ contract Celery is ERC20 {
 
     /// @notice Switches Account status to start staking
     /// @dev Check if already staking and if not, process an account payout then switch to staking
-    function startStake() public {
+    function startStake() external {
         require(_isAccountInPayout(), "Account already staking.");
 
         _startStake();
@@ -234,7 +234,7 @@ contract Celery is ERC20 {
 
     /// @notice Transfer additional tokens to account balance and start staking
     /// @param amount Number of tokens to add to Account balance
-    function increaseBalanceAndStake(uint256 amount) public {
+    function increaseBalanceAndStake(uint256 amount) external {
         require(amount > 0, AMOUNT_IS_0);
 
         // Start staking if not already
@@ -260,14 +260,14 @@ contract Celery is ERC20 {
     }
 
     /// @notice Switches Account status to start payout
-    function startPayout() public {
+    function startPayout() external {
         require(_isAccountInStake(), "Account already in payout.");
 
         _startPayout();
     }
 
     /// @notice Receive the tokens that are available for payout. There is no penalty on collected tokens
-    function collectPayout() public {
+    function collectPayout() external {
         require(_isAccountInPayout(), ACCOUNT_IS_STAKING);
 
         // Process an account payout
@@ -280,7 +280,7 @@ contract Celery is ERC20 {
     /// @notice Force a payout amount to collect with up to a 50% penalty
     /// @param amount of tokens to collect from account
     /// @param amountType If 0, amount is what you want into your wallet (post-penalty). If 1, amount is what you want to take from your account (pre-penalty)
-    function forcePayout(uint256 amount, AmountType amountType) public {
+    function forcePayout(uint256 amount, AmountType amountType) external {
         require(amount > 0, AMOUNT_IS_0);
 
         // Start payout if not already
