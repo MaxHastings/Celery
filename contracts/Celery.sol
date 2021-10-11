@@ -57,13 +57,8 @@ contract Celery is ERC20 {
     // The total number of tokens in payout
     uint256 private _totalPayoutSupply = 0;
 
-    // APY 100% interest
-    // APR 69.314...% continously compounded interest rate
-    // Interest rate is represented as a 60.18-decimal fixed-point number
-    uint256 private constant INTEREST = 693147180559945309;
-
-    // Euler's constant represented as a 60.18-decimal fixed-point number
-    uint256 private constant EULER = 2718281828459045235;
+    // Two represented as a 60.18-decimal fixed-point number
+    uint256 private constant TWO_FIXED_POINT = 2000000000000000000;
 
     // Repeated constant strings for requires
     string private constant TIMESTAMP_TOO_EARLY = "Timestamp too early.";
@@ -82,8 +77,7 @@ contract Celery is ERC20 {
         // Calculate the end time for when to stop interest
         uint256 initialSupply = PRBMathUD60x18.fromUint(initialSupplyNorm);
         uint256 compoundedInterest = PRBMathUD60x18.div(MAX_256_UINT, initialSupply);
-        uint256 rateTime = PRBMathUD60x18.ln(compoundedInterest);
-        uint256 numberOfYears = PRBMathUD60x18.div(rateTime, INTEREST);
+        uint256 numberOfYears = PRBMathUD60x18.log2(compoundedInterest);
         uint256 numberOfYearsNorm = PRBMathUD60x18.toUint(numberOfYears);
 
         // solhint-disable-next-line not-rely-on-time
@@ -120,13 +114,13 @@ contract Celery is ERC20 {
     /// @notice Retrieves the Account status, either Payout or Staking
     /// @param addr The address that is asssociated with the Account
     /// @return Status of Account, 0 = Payout, 1 = Staking
-    function getStatus(address addr) public view returns (uint8) {
+    function getStatus(address addr) external view returns (uint8) {
         return uint8(_accounts[addr].status);
     }
 
     /// @notice Retrieves the end time when interest stops
     /// @return Epoch time in seconds
-    function getEndInterestTime() public view returns (uint256) {
+    function getEndInterestTime() external view returns (uint256) {
         return _endInterestTime;
     }
 
@@ -145,13 +139,13 @@ contract Celery is ERC20 {
 
     /// @notice Retrieves the total payout supply
     /// @return Total payout supply amount
-    function getTotalPayoutSupply() public view returns (uint256) {
+    function getTotalPayoutSupply() external view returns (uint256) {
         return _totalPayoutSupply;
     }
 
     /// @notice Retrieves the fully dilulted token supply which includes all staking and payout tokens
     /// @return Fully Diluted token supply amount
-    function getFullyDilutedSupply() public view returns (uint256) {
+    function getFullyDilutedSupply() external view returns (uint256) {
         return getCirculatingSupply() + getTotalStakingSupply() + _totalPayoutSupply;
     }
 
@@ -159,7 +153,7 @@ contract Celery is ERC20 {
     /// @param addr The address that is asssociated with the Account
     /// @param timeStamp The future timestamp of the planned collection time
     /// @return The Celery you would collect if you executed a collect payout at the provided timestamp
-    function estimateCollectPayout(address addr, uint256 timeStamp) public view returns (uint256) {
+    function estimateCollectPayout(address addr, uint256 timeStamp) external view returns (uint256) {
         require(_isAccountInPayout(), ACCOUNT_IS_STAKING);
 
         // Get the last time account was processed.
@@ -176,7 +170,7 @@ contract Celery is ERC20 {
     /// @param addr The address that is asssociated with the Account
     /// @param timeStamp The future timestamp to determine how much celery you would have at that point in time
     /// @return The Celery you would have if you kept staking up until the provided timestamp
-    function estimateStakeBalance(address addr, uint256 timeStamp) public view returns (uint256) {
+    function estimateStakeBalance(address addr, uint256 timeStamp) external view returns (uint256) {
         require(_isAccountInStake(), "Account is in payout.");
 
         // Get the last time account was processed.
@@ -200,7 +194,7 @@ contract Celery is ERC20 {
         uint256 amount,
         AmountType amountType,
         uint256 timeStamp
-    ) public view returns (uint256) {
+    ) external view returns (uint256) {
         require(amount > 0, AMOUNT_IS_0);
 
         // Get the last time account was processed
@@ -232,7 +226,7 @@ contract Celery is ERC20 {
 
     /// @notice Switches Account status to start staking
     /// @dev Check if already staking and if not, process an account payout then switch to staking
-    function startStake() public {
+    function startStake() external {
         require(_isAccountInPayout(), "Account already staking.");
 
         _startStake();
@@ -240,7 +234,7 @@ contract Celery is ERC20 {
 
     /// @notice Transfer additional tokens to account balance and start staking
     /// @param amount Number of tokens to add to Account balance
-    function increaseBalanceAndStake(uint256 amount) public {
+    function increaseBalanceAndStake(uint256 amount) external {
         require(amount > 0, AMOUNT_IS_0);
 
         // Start staking if not already
@@ -266,14 +260,14 @@ contract Celery is ERC20 {
     }
 
     /// @notice Switches Account status to start payout
-    function startPayout() public {
+    function startPayout() external {
         require(_isAccountInStake(), "Account already in payout.");
 
         _startPayout();
     }
 
     /// @notice Receive the tokens that are available for payout. There is no penalty on collected tokens
-    function collectPayout() public {
+    function collectPayout() external {
         require(_isAccountInPayout(), ACCOUNT_IS_STAKING);
 
         // Process an account payout
@@ -286,7 +280,7 @@ contract Celery is ERC20 {
     /// @notice Force a payout amount to collect with up to a 50% penalty
     /// @param amount of tokens to collect from account
     /// @param amountType If 0, amount is what you want into your wallet (post-penalty). If 1, amount is what you want to take from your account (pre-penalty)
-    function forcePayout(uint256 amount, AmountType amountType) public {
+    function forcePayout(uint256 amount, AmountType amountType) external {
         require(amount > 0, AMOUNT_IS_0);
 
         // Start payout if not already
@@ -420,16 +414,6 @@ contract Celery is ERC20 {
     Calculates and adds the interest earned to the staked account balance
     Formula used for calculating interest. Continously compounding interest
     Returns amount that user would have at the current timestamp
-    
-    P * e^(r * t) = P(t)
-    
-    P = Princpal Sum
-    P(t) = Value at time t
-    t = length of time the interest is applied for
-    r = Annual Interest Rate = APR
-    e = Euler's Number = 2.718...
-    APR = LN(2) = 0.69314...%
-    APY = 100%
     */
     function _calculateStakedAmount(
         address addr,
@@ -464,7 +448,20 @@ contract Celery is ERC20 {
     }
 
     /*
-    Calculates the new staking balance which is composed of the current staked balance plus the interest earned over the number of seconds staked
+    Calculates the new staking balance which is composed of the current staked balance plus the interest earned over the number of seconds staked.
+    
+    P * e^(r * t) = P(t)
+    
+    P = Princpal Sum
+    P(t) = Value at time t
+    t = length of time the interest is applied for
+    r = Annual Interest Rate = APR
+    e = Euler's Number = 2.718...
+    APR = LN(2) = 0.69314...%
+    APY = 100%
+
+    P(t) = P * e^(LN(2) * t) =  P * 2^t
+    
     Returns the current staked balance + interest
     */
     function _calculateInterest(uint256 stakedAmountNorm, uint256 secondsStakedNorm) private pure returns (uint256) {
@@ -474,11 +471,8 @@ contract Celery is ERC20 {
         // Calculate the percentage of the year staked. Ex. half year = 50% = 0.5
         uint256 percentageYearStaked = PRBMathUD60x18.div(secondsStaked, PRBMathUD60x18.fromUint(SECONDS_PER_YEAR));
 
-        // Multiply interest rate by time staked
-        uint256 rateTime = PRBMathUD60x18.mul(INTEREST, percentageYearStaked);
-
-        // Continuously compound the interest with euler's constant
-        uint256 compoundedRate = PRBMathUD60x18.pow(EULER, rateTime);
+        // Continuously compound the interest with 2^t
+        uint256 compoundedRate = PRBMathUD60x18.pow(TWO_FIXED_POINT, percentageYearStaked);
 
         // Convert staked amount into fixed point number
         uint256 currStaked = PRBMathUD60x18.fromUint(stakedAmountNorm);
