@@ -212,12 +212,14 @@ t = length of time the interest is applied for
 r = APR = LN(2) = 0.69314...%
 e = Euler's Number = 2.718...
 APY = 100%
+
+P(t) = P * e^(LN(2) * t) = P * 2^t
 ```
 
 Here is an example. If your Account Balance has 1,000 tokens and you stake for 4 years then your Account Balance will have grown to 16,000.
 
 ```
-1,000 * e^(LN(2) * 4) = 16,000
+1,000 * 2^4 = 16,000
 ```
 
 ### Payout
