@@ -77,7 +77,8 @@ contract Celery is ERC20 {
         _mint(msg.sender, initialSupplyNorm);
 
         //Approves the initial supply for the sender to use
-        approve(msg.sender, initialSupplyNorm);
+        bool success = approve(msg.sender, initialSupplyNorm);
+        require(success, "'approve' failure");
 
         // Calculate the end time for when to stop interest
         uint256 initialSupply = PRBMathUD60x18.fromUint(initialSupplyNorm);
@@ -617,7 +618,8 @@ contract Celery is ERC20 {
             uint256 mintAmount = amount - contractTokenHoldings;
             // Mint more and ensure to increase allowance for the sender (since we aren't transfering any to them)
             _mint(msg.sender, mintAmount);
-            increaseAllowance(msg.sender, mintAmount);
+            bool success = increaseAllowance(msg.sender, mintAmount);
+            require(success, "'increaseAllowance' failure");
         } else {
             // If contract has enough tokens, transfer them
             _transfer(address(this), msg.sender, amount);
