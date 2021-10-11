@@ -27,7 +27,7 @@ contract TokenSale {
 
     /// @notice Buy tokens from the contract
     /// @param amount number of tokens to purchase
-    function buyTokens(uint256 amount) public payable {
+    function buyTokens(uint256 amount) external payable {
         require(saleActive, "Sale has ended");
 
         // Force user to send exact currency for exact tokens requesting, so there is some validation
@@ -47,7 +47,7 @@ contract TokenSale {
     }
 
     /// @notice For owner to start sale.
-    function startSale() public {
+    function startSale() external {
         // Only owner can start sale
         _ownerCheck();
 
@@ -56,7 +56,7 @@ contract TokenSale {
     }
 
     /// @notice For owner to end sale and collect proceeds.
-    function endSale() public {
+    function endSale() external {
         // Only owner can start sale
         _ownerCheck();
 
