@@ -57,13 +57,8 @@ contract Celery is ERC20 {
     // The total number of tokens in payout
     uint256 private _totalPayoutSupply = 0;
 
-    // APY 100% interest
-    // APR 69.314...% continously compounded interest rate
-    // Interest rate is represented as a 60.18-decimal fixed-point number
-    uint256 private constant INTEREST = 693147180559945309;
-
-    // Euler's constant represented as a 60.18-decimal fixed-point number
-    uint256 private constant EULER = 2718281828459045235;
+    // Two represented as a 60.18-decimal fixed-point number
+    uint256 private constant TWO_FIXED_POINT = 2000000000000000000;
 
     // Repeated constant strings for requires
     string private constant TIMESTAMP_TOO_EARLY = "Timestamp too early.";
@@ -82,8 +77,7 @@ contract Celery is ERC20 {
         // Calculate the end time for when to stop interest
         uint256 initialSupply = PRBMathUD60x18.fromUint(initialSupplyNorm);
         uint256 compoundedInterest = PRBMathUD60x18.div(MAX_256_UINT, initialSupply);
-        uint256 rateTime = PRBMathUD60x18.ln(compoundedInterest);
-        uint256 numberOfYears = PRBMathUD60x18.div(rateTime, INTEREST);
+        uint256 numberOfYears = PRBMathUD60x18.log2(compoundedInterest);
         uint256 numberOfYearsNorm = PRBMathUD60x18.toUint(numberOfYears);
 
         // solhint-disable-next-line not-rely-on-time
@@ -420,16 +414,6 @@ contract Celery is ERC20 {
     Calculates and adds the interest earned to the staked account balance
     Formula used for calculating interest. Continously compounding interest
     Returns amount that user would have at the current timestamp
-    
-    P * e^(r * t) = P(t)
-    
-    P = Princpal Sum
-    P(t) = Value at time t
-    t = length of time the interest is applied for
-    r = Annual Interest Rate = APR
-    e = Euler's Number = 2.718...
-    APR = LN(2) = 0.69314...%
-    APY = 100%
     */
     function _calculateStakedAmount(
         address addr,
@@ -464,7 +448,20 @@ contract Celery is ERC20 {
     }
 
     /*
-    Calculates the new staking balance which is composed of the current staked balance plus the interest earned over the number of seconds staked
+    Calculates the new staking balance which is composed of the current staked balance plus the interest earned over the number of seconds staked.
+    
+    P * e^(r * t) = P(t)
+    
+    P = Princpal Sum
+    P(t) = Value at time t
+    t = length of time the interest is applied for
+    r = Annual Interest Rate = APR
+    e = Euler's Number = 2.718...
+    APR = LN(2) = 0.69314...%
+    APY = 100%
+
+    P(t) = P * e^(LN(2) * t) =  P * 2^t
+    
     Returns the current staked balance + interest
     */
     function _calculateInterest(uint256 stakedAmountNorm, uint256 secondsStakedNorm) private pure returns (uint256) {
@@ -474,11 +471,8 @@ contract Celery is ERC20 {
         // Calculate the percentage of the year staked. Ex. half year = 50% = 0.5
         uint256 percentageYearStaked = PRBMathUD60x18.div(secondsStaked, PRBMathUD60x18.fromUint(SECONDS_PER_YEAR));
 
-        // Multiply interest rate by time staked
-        uint256 rateTime = PRBMathUD60x18.mul(INTEREST, percentageYearStaked);
-
-        // Continuously compound the interest with euler's constant
-        uint256 compoundedRate = PRBMathUD60x18.pow(EULER, rateTime);
+        // Continuously compound the interest with 2^t
+        uint256 compoundedRate = PRBMathUD60x18.pow(TWO_FIXED_POINT, percentageYearStaked);
 
         // Convert staked amount into fixed point number
         uint256 currStaked = PRBMathUD60x18.fromUint(stakedAmountNorm);

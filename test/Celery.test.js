@@ -693,7 +693,7 @@ describe("Test Celery Supply with multiple accounts", function () {
 
 function calculateStake(amount, stakedTime) {
     const percTime = stakedTime / SECONDS_IN_A_YEAR;
-    return Math.ceil(amount * Math.pow(Math.E, percTime * Math.LN2));
+    return Math.ceil(amount * Math.pow(2, percTime));
 }
 
 // *** Expect Functions *** //
