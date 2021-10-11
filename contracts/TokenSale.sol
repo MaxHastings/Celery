@@ -47,19 +47,13 @@ contract TokenSale {
     }
 
     /// @notice For owner to start sale.
-    function startSale() public {
-        // Only owner can start sale
-        _ownerCheck();
-
+    function startSale() public _ownerCheck {
         saleActive = true;
         emit StartSaleEvent();
     }
 
     /// @notice For owner to end sale and collect proceeds.
-    function endSale() public {
-        // Only owner can start sale
-        _ownerCheck();
-
+    function endSale() public _ownerCheck {
         saleActive = false;
         emit EndSaleEvent();
 
@@ -72,10 +66,11 @@ contract TokenSale {
 
     /*** ***/
 
-    /*** Private functions ***/
+    /*** Modifiers ***/
 
-    function _ownerCheck() private view {
+    modifier _ownerCheck {
         require(msg.sender == _owner, "You must be the owner");
+        _;
     }
 
     /*** ***/
