@@ -10,6 +10,8 @@ import "prb-math/contracts/PRBMathUD60x18.sol";
 /// @notice You can use this contract to stake and earn Celery
 /// @dev Inherits ERC20 functionality
 contract Celery is ERC20 {
+    /*** Type Declarations ***/
+
     // Each account can be in one status, payout or stake
     enum AccountStatus {
         PAYOUT,
@@ -35,6 +37,10 @@ contract Celery is ERC20 {
         // The status of the account
         AccountStatus status; //0 = Payout, 1 = Staking
     }
+
+    /*** ***/
+
+    /*** State Variables ***/
 
     // Create key-value pair, key = address, value = Account struct
     mapping(address => Account) private _accounts;
@@ -65,6 +71,8 @@ contract Celery is ERC20 {
     string private constant ACCOUNT_IS_STAKING = "Account is staking.";
     string private constant AMOUNT_IS_0 = "Amount must be greater than 0.";
     string private constant INSUFFICIENT_ACCOUNT_BALANCE = "Insufficient account balance.";
+
+    /*** ***/
 
     /*** Events ***/
 

@@ -27,6 +27,7 @@ contract TokenSale {
 
     /*** ***/
 
+    // Contract creation
     constructor(IERC20Metadata _contract, uint256 price) {
         // Setup contract and how much currency per token
         _owner = msg.sender;
