@@ -6,6 +6,7 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract TokenSale {
+    /*** State Variables ***/
     IERC20Metadata public immutable tokenContract; // the token being sold
 
     uint256 public immutable tokenPrice; // the price, in wei, per token
@@ -15,6 +16,16 @@ contract TokenSale {
     bool public saleActive = false; // True if you can buy tokens, false if not
 
     address private immutable _owner; // Keep track of owner (TokenSale creator) to be able to start/stop sale, collect remaining tokens/currency, etc.
+
+    /*** ***/
+
+    /*** Events ***/
+
+    event SoldEvent(address buyer, uint256 amount);
+    event StartSaleEvent();
+    event EndSaleEvent();
+
+    /*** ***/
 
     constructor(IERC20Metadata _contract, uint256 price) {
         // Setup contract and how much currency per token
@@ -72,10 +83,14 @@ contract TokenSale {
 
     /*** Modifiers ***/
 
-    modifier _ownerCheck {
+    modifier _ownerCheck() {
         require(msg.sender == _owner, "You must be the owner");
         _;
     }
+
+    /*** ***/
+
+    /*** Private functions ***/
 
     // Substitatute obsolete 'transfer' and 'send' functions, pulled from internal function at
     // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/87326f7313e851a603ef430baa33823e4813d977/contracts/utils/Address.sol#L37-L59
@@ -86,14 +101,6 @@ contract TokenSale {
         (bool success, ) = recipient.call{value: amount}("");
         require(success, "Unable to send value");
     }
-
-    /*** ***/
-
-    /*** Events ***/
-
-    event SoldEvent(address buyer, uint256 amount);
-    event StartSaleEvent();
-    event EndSaleEvent();
 
     /*** ***/
 }
