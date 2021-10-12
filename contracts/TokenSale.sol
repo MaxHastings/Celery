@@ -48,12 +48,16 @@ contract TokenSale {
 
     /// @notice For owner to start sale.
     function startSale() external _ownerCheck {
+        require(!saleActive, "Sale already started");
+
         saleActive = true;
         emit StartSaleEvent();
     }
 
     /// @notice For owner to end sale and collect proceeds.
     function endSale() external _ownerCheck {
+        require(saleActive, "Sale already ended");
+
         saleActive = false;
         emit EndSaleEvent();
 
@@ -61,7 +65,7 @@ contract TokenSale {
         tokenContract.transfer(_owner, tokenContract.balanceOf(address(this)));
 
         // Transfer currency to the owner.
-        payable(msg.sender).transfer(address(this).balance);
+        _sendValue(payable(msg.sender), address(this).balance);
     }
 
     /*** ***/
@@ -71,6 +75,16 @@ contract TokenSale {
     modifier _ownerCheck {
         require(msg.sender == _owner, "You must be the owner");
         _;
+    }
+
+    // Substitatute obsolete 'transfer' and 'send' functions, pulled from internal function at
+    // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/87326f7313e851a603ef430baa33823e4813d977/contracts/utils/Address.sol#L37-L59
+    function _sendValue(address payable recipient, uint256 amount) internal {
+        require(address(this).balance >= amount, "Insufficient balance");
+
+        // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
+        (bool success, ) = recipient.call{value: amount}("");
+        require(success, "Unable to send value");
     }
 
     /*** ***/
