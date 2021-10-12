@@ -27,7 +27,7 @@ contract TokenSale {
 
     /// @notice Buy tokens from the contract
     /// @param amount number of tokens to purchase
-    function buyTokens(uint256 amount) public payable {
+    function buyTokens(uint256 amount) external payable {
         require(saleActive, "Sale has ended");
 
         // Force user to send exact currency for exact tokens requesting, so there is some validation
@@ -47,22 +47,16 @@ contract TokenSale {
     }
 
     /// @notice For owner to start sale.
-    function startSale() public {
+    function startSale() external _ownerCheck {
         require(!saleActive, "Sale already started");
-
-        // Only owner can start sale
-        _ownerCheck();
 
         saleActive = true;
         emit StartSaleEvent();
     }
 
     /// @notice For owner to end sale and collect proceeds.
-    function endSale() public {
+    function endSale() external _ownerCheck {
         require(saleActive, "Sale already ended");
-
-        // Only owner can start sale
-        _ownerCheck();
 
         saleActive = false;
         emit EndSaleEvent();
@@ -76,10 +70,11 @@ contract TokenSale {
 
     /*** ***/
 
-    /*** Private functions ***/
+    /*** Modifiers ***/
 
-    function _ownerCheck() private view {
+    modifier _ownerCheck {
         require(msg.sender == _owner, "You must be the owner");
+        _;
     }
 
     // Substitatute obsolete 'transfer' and 'send' functions, pulled from internal function at
