@@ -6,36 +6,36 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "prb-math/contracts/PRBMathUD60x18.sol";
 
-// Each account can be in one status, payout or stake
-enum AccountStatus {
-    PAYOUT,
-    STAKE
-}
-
-// Two types of amounts can be specified for the "forcePayout" method
-// If TO_WALLET, amount is what you want into your wallet (post-penalty)
-// If FROM_ACCOUNT, amount is what you want to take from your account (pre-penalty)
-enum AmountType {
-    TO_WALLET,
-    FROM_ACCOUNT
-}
-
-// Each address that interacts with the contract will store the below data
-struct Account {
-    // The number of tokens in the Account balance
-    uint256 balance;
-    // The last time (epoch) the contract processed calculating Account interest or payout
-    uint256 lastProcessedTime;
-    // Remember the last staking balance when Account switches to payout. Used for calculating payout amount
-    uint256 lastStakingBalance;
-    // The status of the account
-    AccountStatus status; //0 = Payout, 1 = Staking
-}
-
 /// @title An Annuity like Smart Contract called Celery
 /// @notice You can use this contract to stake and earn Celery
 /// @dev Inherits ERC20 functionality
 contract Celery is ERC20 {
+    // Each account can be in one status, payout or stake
+    enum AccountStatus {
+        PAYOUT,
+        STAKE
+    }
+
+    // Two types of amounts can be specified for the "forcePayout" method
+    // If TO_WALLET, amount is what you want into your wallet (post-penalty)
+    // If FROM_ACCOUNT, amount is what you want to take from your account (pre-penalty)
+    enum AmountType {
+        TO_WALLET,
+        FROM_ACCOUNT
+    }
+
+    // Each address that interacts with the contract will store the below data
+    struct Account {
+        // The number of tokens in the Account balance
+        uint256 balance;
+        // The last time (epoch) the contract processed calculating Account interest or payout
+        uint256 lastProcessedTime;
+        // Remember the last staking balance when Account switches to payout. Used for calculating payout amount
+        uint256 lastStakingBalance;
+        // The status of the account
+        AccountStatus status; //0 = Payout, 1 = Staking
+    }
+
     // Create key-value pair, key = address, value = Account struct
     mapping(address => Account) private _accounts;
 
@@ -65,6 +65,22 @@ contract Celery is ERC20 {
     string private constant ACCOUNT_IS_STAKING = "Account is staking.";
     string private constant AMOUNT_IS_0 = "Amount must be greater than 0.";
     string private constant INSUFFICIENT_ACCOUNT_BALANCE = "Insufficient account balance.";
+
+    /*** Events ***/
+
+    // Event that an account forced payout with a penalty
+    event ForcePayoutEvent(address _address, uint256 _amount);
+
+    // Event that an account collected payout
+    event CollectPayoutEvent(address _address, uint256 _amount);
+
+    // Event that an account increased its balance
+    event IncreaseBalanceAndStakeEvent(address _address, uint256 _amount);
+
+    // Event that an account status has been changed.
+    event AccountStatusEvent(address _address, uint8 _value);
+
+    /*** ***/
 
     // Contract creation
     constructor(uint256 initialSupplyNorm) ERC20("Celery", "CLY") {
@@ -674,22 +690,6 @@ contract Celery is ERC20 {
     function _setBalance(uint256 amount) private {
         _accounts[msg.sender].balance = amount;
     }
-
-    /*** ***/
-
-    /*** Events ***/
-
-    // Event that an account forced payout with a penalty
-    event ForcePayoutEvent(address _address, uint256 _amount);
-
-    // Event that an account collected payout
-    event CollectPayoutEvent(address _address, uint256 _amount);
-
-    // Event that an account increased its balance
-    event IncreaseBalanceAndStakeEvent(address _address, uint256 _amount);
-
-    // Event that an account status has been changed.
-    event AccountStatusEvent(address _address, uint8 _value);
 
     /*** ***/
 }
