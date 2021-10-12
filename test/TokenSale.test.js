@@ -144,6 +144,20 @@ describe("TokenSale", function () {
         );
     });
 
+    it("Test if try to start sale when already started", async function () {
+        TokenSale.connect(this.owner).startSale();
+        
+        await expect(TokenSale.connect(this.owner).startSale()).to.be.revertedWith(
+            "Sale already started"
+        );
+    });
+
+    it("Test if try to end sale when already ended", async function () {
+        await expect(TokenSale.connect(this.owner).endSale()).to.be.revertedWith(
+            "Sale already ended"
+        );
+    });
+
     async function expectAccountBalance(address, amount) {
         expect((await Celery.balanceOf(address)).toString()).to.equal(
             amount.toString()
