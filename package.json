@@ -28,7 +28,10 @@
     "coverage": "npm run lint && npx hardhat coverage",
     "deploylocaltestnet": "npm run build && npx hardhat run --network localtestnet scripts/deploy.js",
     "deploytestnet": "npm run build && npx hardhat run --network testnet scripts/deploy.js",
-    "deploymainnet": "npm run build && npx hardhat run --network mainnet scripts/deploy.js"
+    "deploymainnet": "npm run build && npx hardhat run --network mainnet scripts/deploy.js",
+    "deploytokensalelocaltestnet": "npm run build && npx hardhat run --network localtestnet scripts/deployTokenSale.js",
+    "deploytokensaletestnet": "npm run build && npx hardhat run --network testnet scripts/deployTokenSale.js",
+    "deploytokensalemainnet": "npm run build && npx hardhat run --network mainnet scripts/deployTokenSale.js"
   },
   "repository": {
     "type": "git",

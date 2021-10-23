@@ -1,7 +1,7 @@
 async function main() {
     // We get the contract to deploy
     const Celery = await ethers.getContractFactory("Celery");
-    const celery = await Celery.deploy("500000000000000000000"); // 5 billion
+    const celery = await Celery.deploy("500000000000000000000"); // Generate 5 billion Celery
 
     console.log("Celery deployed!");
     console.log(`Contract Address: ${celery.address}`);
