@@ -60,6 +60,8 @@ To learn how to contribute to the project please contact @MaxHastings on Telegra
 
 ## Security
 
+Audited by CertiK : https://www.certik.org/projects/celery
+
 If you find any security vulnerabilities or concerns please privately contact @MaxHastings on Telegram. Find him on the official Celery [Telegram group](https://t.me/celeryToken)
 
 Bugs found will be rewarded based on severity.
