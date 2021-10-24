@@ -41,7 +41,7 @@ module.exports = {
             chainId: 10000,
             from: "", //Address contract is coming from (this accounts private key should be in accounts array below)
             gas: "auto",
-            gasPrice: 1000000000,
+            gasPrice: 1050000000,
             gasMultiplier: 1,
             accounts: [] // Private key to sign TX from (add one private key string to array) (DO NOT COMMIT)
         }
