@@ -1,0 +1,14 @@
+Celery.sol:
+Contract Address: 0x7642Df81b5BEAeEb331cc5A104bd13Ba68c34B91
+Contract From: 0xBb4BA3e8667Ef8651a6412F4ceA73aA71ED99Cc5
+Contract TX Id: 0xaea4df2e5c6cb57b370d7310323f62c4de98d2e3288c142229bcaddbded10cbd
+Block Id: 0xf4edb77c0a1bec942cfff3f2dc97b60e6150cba0c37b0b0b6079d1a2364dab41
+Block Height: 1311411
+
+
+TokenSale.sol:
+Contract Address: 0x516Ef15d906466F75E50A0e6Edd3E6Ce5908cB13
+Contract From: 0xBb4BA3e8667Ef8651a6412F4ceA73aA71ED99Cc5
+Contract TX Id: 0x77d3a50f8d3a0a6d95f1c602b3f9daac12e956a63ae8d00fdc09aae91a289347
+Block Id: 0xcbbc1b0898d9e1c4e817aef426d11dcf7c3a270c89ad127f3d14936ab0019551
+Block Height: 1311435
